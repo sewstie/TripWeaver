@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# TripWeaver 🌍✈️
 
-## Getting Started
+Welcome to TripWeaver – your collaborative platform for crafting perfect travel itineraries! TripWeaver helps you and your fellow travelers seamlessly plan, organize, and visualize your journeys, from initial ideas to detailed day-by-day schedules.
 
-First, run the development server:
+## 🌟 About The Project
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+TripWeaver aims to simplify the complexities of travel planning by providing an intuitive and interactive tool. Whether you're organizing a solo adventure, a family vacation, or a group expedition, TripWeaver provides the features you need to weave together all the elements of your next unforgettable trip.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Core Features (MVP Focus)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- **User Authentication:** Secure sign-up and login (Email/Password, Google Sign-In) powered by Firebase.
+- **Trip Management:**
+  - Create, view, edit, and delete trips.
+  - Define trip details: name, destination(s), travel dates, and a cover image.
+  - A personal dashboard to manage all your trips.
+- **Collaborative Itinerary Building:**
+  - Invite friends or family to collaborate on trip planning with view or edit permissions.
+  - Day-by-day scheduler for detailed planning.
+  - Add, edit, delete, and reorder various itinerary items:
+    - **Places & Activities:** Points of interest, restaurants, tours (with address, notes).
+    - **Accommodation:** Hotel details, booking confirmations.
+    - **Transport:** Flight, train, bus, or car rental information.
+    - **Custom Notes.**
+  - Drag & drop functionality for easy organization.
+- **Interactive Map Integration:**
+  - Visualize geocoded itinerary items (places, accommodations) on an interactive map (e.g., using Leaflet/OpenStreetMap or Mapbox).
+  - Click map pins for quick access to item details.
+- **Basic Destination Information:**
+  - Access curated snippets of information for popular travel destinations.
+- **Document Upload:**
+  - Attach essential travel documents (e.g., booking confirmations, tickets) to your trips using Firebase Storage.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Tech Stack
 
-## Learn More
+- **Frontend:** Next.js (React)
+- **Styling:** Tailwind CSS
+- **Backend & Database:** Firebase
+  - **Firestore:** For storing user data, trips, itineraries, and destination info.
+  - **Firebase Authentication:** For user sign-up and login.
+  - **Firebase Storage:** For storing user uploads (profile pictures, trip covers, documents).
+- **Mapping API:** Leaflet with OpenStreetMap / Mapbox (or similar)
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Project Status
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- In Development - MVP (Minimum Viable Product) currently being built.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🏁 Getting Started (Placeholder)
 
-## Deploy on Vercel
+This section will provide instructions on how to set up and run the project locally.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1.  **Clone the repository:**
+    ```bash
+    git clone [your-repository-url]
+    ```
+2.  **Install dependencies:**
+    ```bash
+    cd TripWeaver
+    npm install
+    # or
+    # yarn install
+    ```
+3.  **Set up environment variables:**
+    - Create a `.env.local` file based on `.env.example` (you'll need to create this).
+    - Add your Firebase project configuration and API keys.
+4.  **Run the development server:**
+    ```bash
+    npm run dev
+    # or
+    # yarn dev
+    ```
+    Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤝 Contributing (Placeholder)
+
+Details on how to contribute to the project will be added here in the future.
+
+---
+
+Let's weave some amazing journeys together!
