@@ -9,6 +9,10 @@ const images = [
   "/images/monuments/monument-5.png",
   "/images/monuments/monument-6.png",
   "/images/monuments/monument-7.png",
+  "/images/monuments/monument-8.png",
+  "/images/monuments/monument-9.png",
+  "/images/monuments/monument-10.png",
+  "/images/monuments/monument-11.png",
 ];
 
 const SliderContext = createContext();
