@@ -15,7 +15,9 @@ export default function Home() {
           <ScrollIndicator />
         </SliderProvider>
       </div>
-      <TripSearch />
+      <div className="relative z-10">
+        <TripSearch />
+      </div>
     </>
   );
 }

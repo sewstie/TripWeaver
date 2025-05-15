@@ -11,7 +11,7 @@ export default function ScrollIndicator() {
 
   return (
     <div 
-      className="absolute bottom-8 left-0 right-0 flex flex-row items-center justify-center cursor-pointer transition-opacity duration-300 hover:opacity-80 text-[var(--focus)]"
+      className="absolute bottom-8 left-0 right-0 flex flex-row items-center justify-center cursor-pointer transition-opacity duration-300 hover:opacity-80 text-[var(--tw-focus)]"
       onClick={scrollToNextSection}
     >
       <span className="font-light">scroll down</span>
