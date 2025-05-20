@@ -2,15 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  Loader2,
-  Mail,
-  Lock,
-  User,
-  Eye,
-  EyeOff,
-  CheckCircle,
-} from "lucide-react";
+import { Loader2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
+import { AlertCircle } from "lucide-react";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -24,6 +19,9 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [authError, setAuthError] = useState("");
+  const { signup } = useAuth();
+  const router = useRouter();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -73,17 +71,31 @@ export default function Signup() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
-
     setIsLoading(true);
-
-    setTimeout(() => {
-      console.log("Signup data:", formData);
+    setAuthError("");
+    try {
+      const user = await signup(
+        formData.email,
+        formData.password,
+        formData.username
+      );
+      localStorage.setItem(`username_${user.uid}`, formData.username);
+      router.push("/");
+    } catch (error) {
+      console.error("Signup error:", error);
+      if (error.code === "auth/email-already-in-use") {
+        setAuthError("This email is already registered.");
+      } else if (error.code === "auth/weak-password") {
+        setAuthError("Password is too weak.");
+      } else {
+        setAuthError("An error occurred. Please try again.");
+      }
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -93,11 +105,15 @@ export default function Signup() {
           <h1 className="text-3xl font-bold mb-6 text-center text-[var(--tw-text)]">
             Join <span className="text-[var(--tw-focus)]">TripWeaver</span>
           </h1>
-
           <p className="text-[var(--tw-text)] opacity-80 text-center mb-8">
             Create an account to start your journey with us
           </p>
-
+          {authError && (
+            <div className="mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <span>{authError}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
@@ -212,7 +228,7 @@ export default function Signup() {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <CheckCircle className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                  <Lock className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
                 </div>
                 <input
                   type={showConfirmPassword ? "text" : "password"}

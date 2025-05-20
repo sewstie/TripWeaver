@@ -4,11 +4,10 @@ import { createContext, useContext, useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import {
   auth,
-  CreateUserWithEmailAndPassword,
-  SignInWithEmailAndPassword,
-  SignOut,
-  OnAuthStateChanged,
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
 } from "./firebase";
 
 const AuthContext = createContext();
@@ -57,7 +56,7 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStageChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
     });

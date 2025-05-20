@@ -23,13 +23,21 @@ export default function Header() {
         >
           TripWeaver
         </Link>
-        <button
-          onClick={scrollToNextSection}
-          className="px-5 py-2 rounded-full border border-[var(--tw-focus)] text-[var(--tw-text)] transition-all duration-300 hover:bg-opacity-20 z-10"
-          style={{ backgroundColor: "transparent" }}
-        >
-          Explore
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            className="px-5 py-2 rounded-full text-[var(--tw-text)] z-10"
+          >
+            Login
+          </Link>
+          <button
+            onClick={scrollToNextSection}
+            className="cursor-pointer px-5 py-2 rounded-full border border-[var(--tw-focus)] text-[var(--tw-text)] transition-all duration-300 hover:bg-opacity-20 z-10"
+            style={{ backgroundColor: "transparent" }}
+          >
+            Explore
+          </button>
+        </div>
       </div>
     </header>
   );

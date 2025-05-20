@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
+import { AlertCircle } from "lucide-react";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -12,6 +15,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [authError, setAuthError] = useState("");
+  const { login } = useAuth();
+  const router = useRouter();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,16 +51,29 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     setIsLoading(true);
-
-    setTimeout(() => {
-      console.log("Login data", formData);
+    setAuthError("");
+    try {
+      await login(formData.email, formData.password);
+      router.push("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      if (
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/wrong-password"
+      ) {
+        setAuthError("Invalid email or password");
+      } else if (error.code === "auth/too-many-requests") {
+        setAuthError("Too many requests. Please try again later.");
+      } else {
+        setAuthError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -65,11 +84,15 @@ export default function Login() {
             Welcome Back to{" "}
             <span className="text-[var(--tw-focus)]">TripWeaver</span>
           </h1>
-
           <p className="text-[var(--tw-text)] opacity-80 text-center mb-8">
             Sign in to access your travel plans and continue your journey
           </p>
-
+          {authError && (
+            <div className="mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <span>{authError}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
