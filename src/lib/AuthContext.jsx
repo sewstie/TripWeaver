@@ -8,6 +8,9 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  signInWithPopup,
+  googleProviderr,
+  githubProvider,
 } from "./firebase";
 
 const AuthContext = createContext();
@@ -50,6 +53,42 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function signInWithGoogle() {
+    try {
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      if (userCredential.user.displayName) {
+        localStorage.setItem(
+          `username_${userCredential.user.uid}`,
+          userCredential.user.displayName
+        );
+      }
+      return userCredential.user;
+    } catch {
+      error;
+    }
+    {
+      throw error;
+    }
+  }
+
+  async function signInWithGithub() {
+    try {
+      const userCredential = await signInWithPopup(auth, githubProvider);
+      if (userCredential.user.displayName) {
+        localStorage.setItem(
+          `username_${userCredential.user.uid}`,
+          userCredential.user.displayName
+        );
+      }
+      return userCredential.user;
+    } catch {
+      error;
+    }
+    {
+      throw error;
+    }
+  }
+
   async function logout() {
     await signOut(auth);
     router.push("/login");
@@ -67,6 +106,8 @@ export function AuthProvider({ children }) {
     currentUser,
     signup,
     login,
+    signInWithGoogle,
+    signInWithGithub,
     logout,
     getUserName: (uid) =>
       uid ? localStorage.getItem(`username_${uid}`) : null,
