@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Loader2, Mail, Lock, Eye, EyeOff, GitBranch } from "lucide-react";
+import { Loader2, Mail, Lock, Eye, EyeOff, Github } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { AlertCircle } from "lucide-react";
@@ -181,7 +181,7 @@ export default function Login() {
               {isGithubLoading ? (
                 <Loader2 className="animate-spin h-5 w-5" />
               ) : (
-                <GitBranch className="h-5 w-5" />
+                <Github className="h-5 w-5" />
               )}
               Continue with Github
             </button>
