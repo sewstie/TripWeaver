@@ -9,7 +9,7 @@ import {
   signOut,
   onAuthStateChanged,
   signInWithPopup,
-  googleProviderr,
+  googleProvider,
   githubProvider,
 } from "./firebase";
 
@@ -63,10 +63,7 @@ export function AuthProvider({ children }) {
         );
       }
       return userCredential.user;
-    } catch {
-      error;
-    }
-    {
+    } catch (error) {
       throw error;
     }
   }
@@ -81,10 +78,7 @@ export function AuthProvider({ children }) {
         );
       }
       return userCredential.user;
-    } catch {
-      error;
-    }
-    {
+    } catch (error) {
       throw error;
     }
   }

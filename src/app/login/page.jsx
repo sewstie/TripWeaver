@@ -271,7 +271,7 @@ export default function Login() {
               className="cursor-pointer w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-white text-gray-700 border border-gray-300 flex items-center justify-center gap-2"
             >
               {isGoogleLoading ? (
-                <Loader2 className="anumate-spin h-5 w-5" />
+                <Loader2 className="animate-spin h-5 w-5" />
               ) : (
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -305,7 +305,7 @@ export default function Login() {
               ) : (
                 <Github className="h-5 w-5" />
               )}
-              Continue with Github
+              Continue with GitHub
             </button>
           </div>
           <div className="mt-8 text-center">
