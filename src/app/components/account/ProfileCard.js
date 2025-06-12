@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useAuth } from "@/app/AuthContext";
+import { useAuth } from "@/lib/AuthContext";
 import { updateProfile } from "firebase/auth";
-import { auth } from "@lib/firebase";
+import { auth } from "@/lib/firebase";
 import { User, Mail, Calendar, Shield, Edit2, Save, X } from "lucide-react";
 
 export default function ProfileCard() {

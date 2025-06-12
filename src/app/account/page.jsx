@@ -1,6 +1,7 @@
 "use client";
-import { useAuth } from "@/app/AuthContext";
-import { useRouter } from "next/nagivation";
+
+import { useAuth } from "@/lib/AuthContext";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import ProfileCard from "../components/account/ProfileCard";
 

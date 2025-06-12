@@ -48,12 +48,15 @@ export default function Header() {
         <div className="flex items-center gap-2">
           {currentUser ? (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm">
-                <span className="cursor-default text-[var(--tw-text)] text-sm font-medium">
+              <Link
+                href="/account"
+                className="flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm hover:bg-opacity-30 transition-all duration-300"
+              >
+                <span className="text-[var(--tw-text)] text-sm font-medium">
                   {getDisplayName()}
                 </span>
                 <User className="h-4 w-4 text-[var(--tw-text)]" />
-              </div>
+              </Link>
               <button
                 className="cursor-pointer px-5 py-2 rounded-full border border-[var(--tw-focus)] text-[var(--tw-text)] transition-all duration-300 hover:bg-opacity-20 z-10 "
                 onClick={logout}
