@@ -35,7 +35,7 @@ export default function AccountPage() {
             Account Settings
           </h1>
           <p className="text-[var(--tw-text)] opacity-70">
-            Manage ypur profile information and account preferences.
+            Manage your profile information and account preferences.
           </p>
         </div>
         <div className="grid gap-6">

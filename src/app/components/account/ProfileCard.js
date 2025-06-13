@@ -3,7 +3,16 @@ import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { User, Mail, Calendar, Shield, Edit2, Save, X } from "lucide-react";
+import {
+  User,
+  Mail,
+  Calendar,
+  Shield,
+  Edit2,
+  Save,
+  X,
+  Heart,
+} from "lucide-react";
 
 export default function ProfileCard() {
   const { currentUser, getUserName, logout } = useAuth();
@@ -17,7 +26,7 @@ export default function ProfileCard() {
     const username = getUserName(currentUser?.uid);
     if (username) return username;
     if (currentUser?.displayName) return currentUser.displayName;
-    return currentUser?.email?.split("a")[0] || "User";
+    return currentUser?.email?.split("@")[0] || "User";
   };
 
   const getProviderName = () => {
@@ -27,7 +36,7 @@ export default function ProfileCard() {
     switch (provider) {
       case "google.com":
         return "Google";
-      case "githbu.com":
+      case "github.com":
         return "GitHub";
       case "password":
         return "Email/Password";
@@ -52,13 +61,15 @@ export default function ProfileCard() {
 
   const handleSave = async () => {
     if (!displayName.trim()) {
-      setError("Display name cannot empty");
+      setError("Display name cannot be empty");
       return;
     }
-    setIsloading(true);
+    setIsLoading(true);
     setError("");
     try {
-      await updateProfile(auth.currentUser, { displaName: displayName.trim() });
+      await updateProfile(auth.currentUser, {
+        displayName: displayName.trim(),
+      });
       localStorage.setItem(`username_${currentUser.uid}`, displayName.trim());
       setSuccess("Profile updated successfully!");
       setIsEditing(false);
@@ -80,22 +91,47 @@ export default function ProfileCard() {
     });
   };
 
+  const handleSavedTrips = () => {
+    router.push("/mytrips");
+  };
+
   return (
     <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 border-[var(--tw-border)]">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-[var(--tw-text)] flex items-center gap-2">
-          <User className="h-5 w-5" />
           Profile Information
         </h2>
-        {!isEditing && (
-          <button
-            onClick={handleEditStart}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[var(--tw-focus)] text-white rounded-lg hover:opacity-90 transition-opacity"
-          >
-            <Edit2 className="h-4 w-4" />
-            Edit
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {!isEditing ? (
+            <button
+              onClick={handleEditStart}
+              className="cursor-pointer flex items-center gap-2 px-5 py-1.5 text-sm bg-[var(--tw-focus)] text-white rounded-lg hover:opacity-90 transition-opacity"
+            >
+              <Edit2 className="h-4 w-4" />
+              Edit
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="cursor-pointer flex items-center gap-2 px-5 py-1.5 text-sm bg-[var(--tw-green)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <div className="w-12 h-8 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+              </button>
+              <button
+                onClick={handleEditCancel}
+                className="cursor-pointer flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
       {error && (
         <div className="mb-4 p-3 bg-red-500 bg-opacity-10 border border-red-500 rounded-lg text-red-400 text-sm">
@@ -118,25 +154,12 @@ export default function ProfileCard() {
           </div>
           <div className="flex items-center gap-2">
             {isEditing ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="px-3 py-1 bg-[var(--tw-field)] rounded text-[var(--tw-text)] text-sm focus:outline-none focus:border-[var(--tw-focus)]"
-                />
-                <button
-                  onClick={handleSave}
-                  disabled={isLoading}
-                  className="p=1.5 bg-[var(--tw-green)] text-white rounded hover:opacity-90 transition-opacity disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="px-3 py-1 bg-[var(--tw-field)] rounded text-[var(--tw-text)] text-sm focus:outline-none focus:border-[var(--tw-focus)]"
+              />
             ) : (
               <span className="text-[var(--tw-text)] font-medium">
                 {getDisplayName()}
@@ -146,12 +169,15 @@ export default function ProfileCard() {
         </div>
 
         <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-          <div>
+          <div className="flex items-center gap-3">
             <Mail className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
-            <span className="text-[var(--tw-text)] font-medium">
-              {currentUser?.email}
+            <span className="text-[var(--tw-text)] opacity-70">
+              Email Address
             </span>
           </div>
+          <span className="text-[var(--tw-text)] font-medium">
+            {currentUser?.email}
+          </span>
         </div>
 
         <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
@@ -179,10 +205,17 @@ export default function ProfileCard() {
         </div>
       </div>
 
-      <div className="mt-6 pt-6 border-t border-[var(--tw-border)]">
+      <div className="mt-6 pt-6 border-t border-[var(--tw-border)] flex-col space-y-6">
+        <button
+          onClick={handleSavedTrips}
+          className="cursor-pointer w-full px-4 py-3 bg-[var(--tw-focus)] text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold text-lg"
+        >
+          <Heart className="h-5 w-5" />
+          My Trips
+        </button>
         <button
           onClick={logout}
-          className="w-full px-4 py-2 bg-reg-600 text-white rounded-lg hover:bg-red-700 transtion-colors"
+          className="cursor-pointer w-full px-4 py-2 border-[var(--tw-focus)] border text-white rounded-lg transition-colors font-semibold"
         >
           Logout
         </button>
