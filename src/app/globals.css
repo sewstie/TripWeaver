@@ -6,7 +6,7 @@
 :root {
   --font-poppins: var(--font-poppins);
   --font-nunito: "Nunito Sans", sans-serif;
-  
+
   --tw-background: #020b11;
   --tw-subbackground: #03131d;
   --tw-field: #1b3d50;
@@ -14,7 +14,7 @@
   --tw-text: #ffff;
   --tw-focus: #fe9246;
   --tw-green: #85cc65;
-  
+
   --radius: 0.625rem;
   --background: var(--tw-background);
   --foreground: var(--tw-text);
@@ -34,7 +34,7 @@
   --input: var(--tw-field);
   --ring: var(--tw-focus);
   --border: var(--tw-border);
-  
+
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -132,7 +132,6 @@ body {
 }
 
 @layer base {
-  /* Define theme color utility access */
   :root {
     --color-primary: var(--tw-focus);
     --color-secondary: var(--tw-green);
@@ -199,7 +198,7 @@ body {
 .dark {
   --tw-background: #020b11;
   --tw-subbackground: #03131d;
-  
+
   --background: var(--tw-background);
   --foreground: var(--tw-text);
   --card: var(--tw-subbackground);
@@ -218,8 +217,7 @@ body {
   --border: var(--tw-border);
   --input: var(--tw-field);
   --ring: var(--tw-focus);
-  
-  /* Other dark mode variables remain unchanged */
+
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -242,4 +240,34 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.leaflet-container {
+  background: var(--tw-field) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--tw-subbackground) !important;
+  color: var(--tw-text) !important;
+  border-radius: 8px !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--tw-subbackground) !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: var(--tw-field) !important;
+  color: var(--tw-text) !important;
+  border: 1px solid var(--tw-border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: var(--tw-focus) !important;
+  color: white !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: white !important;
 }

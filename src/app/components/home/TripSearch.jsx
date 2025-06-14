@@ -196,12 +196,18 @@ export default function TripSearch() {
     try {
       const newTrip = {
         name: `Trip to ${
-          selectedLocation.components.city ||
-          selectedLocation.components.town ||
+          selectedLocation.components?.city ||
+          selectedLocation.components?.town ||
           selectedLocation.formatted
         }`,
         destination: selectedLocation.formatted,
-        locationDetails: selectedLocation,
+        locationDetails: {
+          ...selectedLocation,
+          geometry: {
+            lat: selectedLocation.geometry?.lat || 0,
+            lng: selectedLocation.geometry?.lng || 0,
+          },
+        },
         startDate: searchData.startDate,
         endDate: searchData.endDate,
         ownerId: currentUser.uid,
