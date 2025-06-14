@@ -1,9 +1,12 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
+import { Calendar } from "@/app/components/ui/calendar";
+import { Button } from "@/app/components/ui/button";
 import { CalendarIcon, MapPin, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
+import { db, collection, addDoc, serverTimestamp } from "@/lib/firebase";
 
 export default function TripSearch() {
   const [searchData, setSearchData] = useState({
@@ -11,6 +14,9 @@ export default function TripSearch() {
     startDate: undefined,
     endDate: undefined,
   });
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isCreatingTrip, setIsCreatingTrip] = useState(false);
+  const [error, setError] = useState("");
 
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
@@ -25,6 +31,9 @@ export default function TripSearch() {
   const startCalendarRef = useRef(null);
   const endCalendarRef = useRef(null);
   const destinationInputRef = useRef(null);
+
+  const { currentUser } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -121,18 +130,13 @@ export default function TripSearch() {
   };
 
   const handleSelectLocation = (location) => {
-    const formattedLocation = formatLocationName(location);
-    setSearchData((prev) => ({
-      ...prev,
-      destination: formattedLocation, // Use formatted location instead of location.formatted
-    }));
+    setSelectedLocation(location);
+    setSearchData((prev) => ({ ...prev, destination: location.formatted }));
     setSearchResults([]);
   };
 
   const formatLocationName = (location) => {
     const components = [];
-
-    // Use Latin versions of city names when available
     if (location.components.city_latin || location.components.city) {
       components.push(
         location.components.city_latin || location.components.city
@@ -172,9 +176,62 @@ export default function TripSearch() {
     }));
   };
 
+  const createTrip = async () => {
+    if (!selectedLocation) {
+      setError("Please select a destination");
+      return;
+    }
+    if (!searchData.startDate || !searchData.endDate) {
+      setError("Please select both start and end dates");
+      return;
+    }
+    if (!currentUser) {
+      router.push("/login");
+      return;
+    }
+
+    setIsCreatingTrip(true);
+    setError("");
+
+    try {
+      const newTrip = {
+        name: `Trip to ${
+          selectedLocation.components.city ||
+          selectedLocation.components.town ||
+          selectedLocation.formatted
+        }`,
+        destination: selectedLocation.formatted,
+        locationDetails: selectedLocation,
+        startDate: searchData.startDate,
+        endDate: searchData.endDate,
+        ownerId: currentUser.uid,
+        collaborators: [currentUser.uid],
+        createdAt: serverTimestamp(),
+        itinerary: [],
+        budget: {
+          total: 0,
+          accommodation: 0,
+          transportation: 0,
+          activities: 0,
+          food: 0,
+          other: 0,
+        },
+      };
+
+      const docRef = await addDoc(collection(db, "trips"), newTrip);
+
+      router.push(`/planning/${docRef.id}`);
+    } catch (error) {
+      console.error("Error creating trip:", error);
+      setError("Failed to create trip. Please try again.");
+    } finally {
+      setIsCreatingTrip(false);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Search Data:", searchData);
+    createTrip();
   };
 
   return (
@@ -355,9 +412,9 @@ export default function TripSearch() {
               <div className="flex-1 min-w-[200px] flex items-end">
                 <button
                   type="submit"
-                  className="w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white"
+                  className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white"
                 >
-                  Search Trips
+                  {isCreatingTrip ? "Creating Trip..." : "Start Planning"}
                 </button>
               </div>
             </div>
