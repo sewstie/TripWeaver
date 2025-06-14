@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import ProfileCard from "../components/account/ProfileCard";
+import TripsCard from "../components/account/TripsCard";
 
 export default function AccountPage() {
   const { currentUser, loading } = useAuth();
@@ -40,6 +41,7 @@ export default function AccountPage() {
         </div>
         <div className="grid gap-6">
           <ProfileCard />
+          <TripsCard />
         </div>
       </div>
     </div>

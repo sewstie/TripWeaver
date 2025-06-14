@@ -3,16 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import {
-  User,
-  Mail,
-  Calendar,
-  Shield,
-  Edit2,
-  Save,
-  X,
-  Heart,
-} from "lucide-react";
+import { User, Mail, Calendar, Shield, Edit2, Save, X } from "lucide-react";
 
 export default function ProfileCard() {
   const { currentUser, getUserName, logout } = useAuth();
@@ -89,10 +80,6 @@ export default function ProfileCard() {
       month: "long",
       day: "numeric",
     });
-  };
-
-  const handleSavedTrips = () => {
-    router.push("/mytrips");
   };
 
   return (
@@ -205,14 +192,7 @@ export default function ProfileCard() {
         </div>
       </div>
 
-      <div className="mt-6 pt-6 border-t border-[var(--tw-border)] flex-col space-y-6">
-        <button
-          onClick={handleSavedTrips}
-          className="cursor-pointer w-full px-4 py-3 bg-[var(--tw-focus)] text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold text-lg"
-        >
-          <Heart className="h-5 w-5" />
-          My Trips
-        </button>
+      <div className="mt-3 pt-6 flex-col space-y-6">
         <button
           onClick={logout}
           className="cursor-pointer w-full px-4 py-2 border-[var(--tw-focus)] border text-white rounded-lg transition-colors font-semibold"
