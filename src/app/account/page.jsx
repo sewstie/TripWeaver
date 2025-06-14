@@ -38,7 +38,30 @@ export default function AccountPage() {
 
         setTrips(userTrips);
       } catch (error) {
-        console.error("Error fetching trips:", error);
+        if (error.code === "failed-precondition") {
+          console.log("Index is still building. Please wait...");
+
+          const fallbackQuery = query(
+            collection(db, "trips"),
+            where("collaborators", "array-contains", currentUser.uid)
+          );
+
+          const querySnapshot = await getDocs(fallbackQuery);
+          let userTrips = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+
+          userTrips.sort((a, b) => {
+            const aDate = a.createdAt?.toDate?.() || new Date(0);
+            const bDate = b.createdAt?.toDate?.() || new Date(0);
+            return bDate - aDate;
+          });
+
+          setTrips(userTrips);
+        } else {
+          console.error("Error fetching trips:", error);
+        }
       } finally {
         setIsLoadingTrips(false);
       }
@@ -70,8 +93,8 @@ export default function AccountPage() {
           Account Dashboard
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          <div className="lg:col-span-2">
             <ProfileCard />
           </div>
           <div className="lg:col-span-2">

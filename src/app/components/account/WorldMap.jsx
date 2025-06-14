@@ -111,7 +111,7 @@ export default function WorldMap({ trips, onTripClick }) {
               key={trip.id}
               position={coordinates}
               eventHandlers={{
-                click: () => onTripClick && onTripClick(trip),
+                click: () => {},
               }}
             >
               <Popup>
@@ -124,7 +124,9 @@ export default function WorldMap({ trips, onTripClick }) {
                   </div>
                   {onTripClick && (
                     <button
-                      onClick={() => onTripClick(trip)}
+                      onClick={(e) => {
+                        onTripClick(trip);
+                      }}
                       className="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
                     >
                       View Trip
