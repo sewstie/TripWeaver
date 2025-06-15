@@ -3,8 +3,10 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { db, doc, getDoc } from "@/lib/firebase";
+import TripHeader from "./components/TripHeader";
+import DaySchedule from "./components/DaySchedule";
 
-export default function TripPlanningPage() {
+export default function TripPage() {
   const params = useParams();
   const { currentUser } = useAuth();
   const router = useRouter();
@@ -51,12 +53,48 @@ export default function TripPlanningPage() {
     fetchTrip();
   }, [currentUser, tripId]);
 
-  const formatDate = (date) => {
-    if (!date) return "";
-    if (date.toDate) {
-      return date.toDate().toLocaleDateString();
+  const generateDays = () => {
+    if (!trip?.startDate || !trip?.endDate) return [];
+
+    const start = trip.startDate.toDate
+      ? trip.startDate.toDate()
+      : new Date(trip.startDate);
+    const end = trip.endDate.toDate
+      ? trip.endDate.toDate()
+      : new Date(trip.endDate);
+    const days = [];
+
+    const currentDate = new Date(start);
+    let dayNumber = 1;
+
+    while (currentDate <= end) {
+      days.push({
+        dayNumber,
+        date: new Date(currentDate),
+        dateString: currentDate.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+      dayNumber++;
     }
-    return new Date(date).toLocaleDateString();
+
+    return days;
+  };
+
+  const handleEditTrip = () => {
+    console.log("Edit trip clicked");
+  };
+
+  const handleShareTrip = () => {
+    console.log("Share trip clicked");
+  };
+
+  const handleDeleteTrip = () => {
+    console.log("Delete trip clicked");
   };
 
   if (loading) {
@@ -107,64 +145,39 @@ export default function TripPlanningPage() {
     );
   }
 
+  const days = generateDays();
+
   return (
     <div className="min-h-screen bg-[var(--tw-background)] pt-20 pb-8">
-      <div className="container mx-auto px-4 max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-[var(--tw-text)] mb-2">
-            {trip?.name}
-          </h1>
-          <p className="text-[var(--tw-text)] opacity-70 mb-4">
-            {trip?.destination}
-          </p>
-          <div className="flex gap-4 text-sm text-[var(--tw-text)] opacity-60">
-            <span>Start: {formatDate(trip?.startDate)}</span>
-            <span>End: {formatDate(trip?.endDate)}</span>
-          </div>
-        </div>
+      <div className="container mx-auto px-4 max-w-4xl">
+        <TripHeader
+          trip={trip}
+          onEdit={handleEditTrip}
+          onShare={handleShareTrip}
+          onDelete={handleDeleteTrip}
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-[var(--tw-subbackground)] rounded-lg p-6">
-              <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-                Trip Itinerary
-              </h2>
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
+            Day-by-Day Schedule
+          </h2>
+
+          {days.length === 0 ? (
+            <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
               <p className="text-[var(--tw-text)] opacity-70">
-                Welcome to your trip planning page! Start adding activities and
-                destinations.
+                No days to display. Please check your trip dates.
               </p>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-[var(--tw-subbackground)] rounded-lg p-6">
-              <h3 className="text-xl font-bold text-[var(--tw-text)] mb-4">
-                Trip Details
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-[var(--tw-text)] opacity-60">
-                    Destination:
-                  </span>
-                  <p className="text-[var(--tw-text)]">{trip?.destination}</p>
-                </div>
-                <div>
-                  <span className="text-[var(--tw-text)] opacity-60">
-                    Duration:
-                  </span>
-                  <p className="text-[var(--tw-text)]">
-                    {trip?.startDate &&
-                      trip?.endDate &&
-                      Math.ceil(
-                        (new Date(trip.endDate) - new Date(trip.startDate)) /
-                          (1000 * 60 * 60 * 24)
-                      )}{" "}
-                    days
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          ) : (
+            days.map((day) => (
+              <DaySchedule
+                key={day.dayNumber}
+                tripId={tripId}
+                day={day.date}
+                dayNumber={day.dayNumber}
+              />
+            ))
+          )}
         </div>
       </div>
     </div>
