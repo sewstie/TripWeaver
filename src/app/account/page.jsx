@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
-import ProfileCard from "../components/account/ProfileCard";
-import TripsCard from "../components/account/TripsCard";
-import WorldMap from "../components/account/WorldMap";
+import ProfileCard from "./components/ProfileCard";
+import TripsCard from "./components/TripsCard";
+import WorldMap from "./components/WorldMap";
 import { db, collection, query, where, getDocs, orderBy } from "@/lib/firebase";
 
 export default function AccountPage() {

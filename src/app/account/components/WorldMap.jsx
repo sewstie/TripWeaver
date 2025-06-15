@@ -127,7 +127,7 @@ export default function WorldMap({ trips, onTripClick }) {
                       onClick={(e) => {
                         onTripClick(trip);
                       }}
-                      className="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
+                      className="cursor-pointer mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
                     >
                       View Trip
                     </button>

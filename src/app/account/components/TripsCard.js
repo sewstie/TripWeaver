@@ -97,7 +97,7 @@ export default function TripsCard() {
           </p>
           <button
             onClick={() => router.push("/")}
-            className="bg-[var(--tw-focus)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+            className="cursor-pointer bg-[var(--tw-focus)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
           >
             Plan Your First Trip
           </button>
@@ -111,7 +111,7 @@ export default function TripsCard() {
                 onClick={() => handleTripClick(trip)}
                 className="bg-[var(--tw-field)] flex justify-between rounded-lg p-4 hover:bg-opacity-80 transition-colors cursor-pointer"
               >
-                <div className="flex flex-col justify-between items-center">
+                <div className="flex flex-col justify-between">
                   <h3 className="text-lg font-semibold text-[var(--tw-text)]">
                     {trip.name}
                   </h3>
