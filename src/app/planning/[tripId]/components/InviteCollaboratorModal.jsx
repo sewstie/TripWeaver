@@ -30,9 +30,11 @@ export default function InviteCollaboratorModal({ trip, onClose }) {
     setMessage("");
 
     try {
+      const searchEmail = email.trim().toLowerCase();
+
       const usersQuery = query(
         collection(db, "users"),
-        where("email", "==", email.trim().toLowerCase())
+        where("email", "==", searchEmail)
       );
       
       const querySnapshot = await getDocs(usersQuery);
@@ -68,7 +70,6 @@ export default function InviteCollaboratorModal({ trip, onClose }) {
       }, 2000);
 
     } catch (error) {
-      console.error("Error inviting collaborator:", error);
       setMessage("Failed to invite collaborator. Please try again.");
       setMessageType("error");
     } finally {

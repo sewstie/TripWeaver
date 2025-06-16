@@ -12,6 +12,8 @@ import {
   googleProvider,
   githubProvider,
 } from "./firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
 const AuthContext = createContext();
 
@@ -34,6 +36,14 @@ export function AuthProvider({ children }) {
       if (username) {
         localStorage.setItem(`username_${userCredential.user.uid}`, username);
       }
+
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        email: email.toLowerCase(),
+        name: username || "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
       return userCredential.user;
     } catch (error) {
       throw error;
@@ -89,10 +99,25 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, "users", user.uid), {
+            email: user.email.toLowerCase(),
+            name: user.displayName || "",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
       setLoading(false);
     });
+
     return unsubscribe;
   }, []);
 
