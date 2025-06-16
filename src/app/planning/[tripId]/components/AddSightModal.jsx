@@ -1,10 +1,18 @@
 "use client";
-import { useState } from "react";
-import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { X } from "lucide-react";
 
-export default function AddSightModal({ tripId, day, onClose }) {
+export default function AddSightModal({ tripId, day, editingSight, onClose }) {
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -12,6 +20,22 @@ export default function AddSightModal({ tripId, day, onClose }) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (editingSight) {
+      setFormData({
+        name: editingSight.name || "",
+        location: editingSight.location || "",
+        notes: editingSight.notes || "",
+      });
+    } else {
+      setFormData({
+        name: "",
+        location: "",
+        notes: "",
+      });
+    }
+  }, [editingSight]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,27 +49,39 @@ export default function AddSightModal({ tripId, day, onClose }) {
     setError("");
 
     try {
-      const existingItemsQuery = query(
-        collection(db, "trips", tripId, "itineraryItems"),
-        where("day", "==", day)
-      );
-      const existingItems = await getDocs(existingItemsQuery);
-      const nextOrder = existingItems.size;
+      if (editingSight) {
+        await updateDoc(
+          doc(db, "trips", tripId, "itineraryItems", editingSight.id),
+          {
+            name: formData.name.trim(),
+            location: formData.location.trim(),
+            notes: formData.notes.trim(),
+            updatedAt: new Date(),
+          }
+        );
+      } else {
+        const existingItemsQuery = query(
+          collection(db, "trips", tripId, "itineraryItems"),
+          where("day", "==", day)
+        );
+        const existingItems = await getDocs(existingItemsQuery);
+        const nextOrder = existingItems.size;
 
-      await addDoc(collection(db, "trips", tripId, "itineraryItems"), {
-        name: formData.name.trim(),
-        location: formData.location.trim(),
-        notes: formData.notes.trim(),
-        day: day,
-        order: nextOrder,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+        await addDoc(collection(db, "trips", tripId, "itineraryItems"), {
+          name: formData.name.trim(),
+          location: formData.location.trim(),
+          notes: formData.notes.trim(),
+          day: day,
+          order: nextOrder,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
 
       onClose();
     } catch (error) {
-      console.error("Error adding sight:", error);
-      setError("Failed to add sight. Please try again.");
+      console.error("Error saving sight:", error);
+      setError("Failed to save sight. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -61,11 +97,11 @@ export default function AddSightModal({ tripId, day, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
+      <div className="fixed inset-0 bg-black opacity-40 backdrop-blur-sm"></div>
       <div className="relative bg-[var(--tw-subbackground)] rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl opacity-100">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-[var(--tw-text)]">
-            Add New Sight
+            {editingSight ? "Edit Sight" : "Add New Sight"}
           </h3>
           <button
             onClick={onClose}
@@ -126,14 +162,18 @@ export default function AddSightModal({ tripId, day, onClose }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 bg-[var(--tw-focus)] text-white py-2 px-4 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50"
+              className="cursor-pointer flex-1 bg-[var(--tw-focus)] text-white py-2 px-4 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? "Adding..." : "Add Sight"}
+              {isSubmitting
+                ? "Saving..."
+                : editingSight
+                ? "Save Changes"
+                : "Add Sight"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-[var(--tw-field)] text-[var(--tw-text)] py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
+              className="cursor-pointer flex-1 bg-[var(--tw-field)] text-[var(--tw-text)] py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
             >
               Cancel
             </button>

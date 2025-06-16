@@ -14,6 +14,7 @@ import AddSightModal from "./AddSightModal";
 export default function DaySchedule({ tripId, day, dayNumber }) {
   const [sights, setSights] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSight, setEditingSight] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +54,16 @@ export default function DaySchedule({ tripId, day, dayNumber }) {
     });
   };
 
+  const handleEditSight = (sight) => {
+    setEditingSight(sight);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingSight(null);
+  };
+
   return (
     <div className="bg-[var(--tw-subbackground)] rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -88,6 +99,7 @@ export default function DaySchedule({ tripId, day, dayNumber }) {
               sight={sight}
               tripId={tripId}
               isLast={index === sights.length - 1}
+              onEdit={handleEditSight}
             />
           ))
         )}
@@ -97,7 +109,8 @@ export default function DaySchedule({ tripId, day, dayNumber }) {
         <AddSightModal
           tripId={tripId}
           day={day.toISOString().split("T")[0]}
-          onClose={() => setIsModalOpen(false)}
+          editingSight={editingSight}
+          onClose={handleCloseModal}
         />
       )}
     </div>
