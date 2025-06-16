@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MoreVertical } from "lucide-react";
 
 export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
   const router = useRouter();
@@ -45,21 +46,9 @@ export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
         <div className="relative">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
+            className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
           >
-            <svg
-              className="w-5 h-5 text-[var(--tw-text)]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-              />
-            </svg>
+            <MoreVertical className="w-5 h-5 text-[var(--tw-text)]" />
           </button>
 
           {isMenuOpen && (
@@ -69,7 +58,7 @@ export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
                   onEdit && onEdit();
                   setIsMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
+                className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
               >
                 Edit Trip Details
               </button>
@@ -78,7 +67,7 @@ export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
                   onShare && onShare();
                   setIsMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
+                className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
               >
                 Share by Email
               </button>
@@ -87,7 +76,7 @@ export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
                   onDelete && onDelete();
                   setIsMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-3 text-red-500 hover:bg-[var(--tw-field)] transition-colors"
+                className="cursor-pointer w-full text-left px-4 py-3 text-red-500 hover:bg-[var(--tw-field)] transition-colors"
               >
                 Delete Trip
               </button>

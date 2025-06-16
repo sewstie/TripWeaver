@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { X } from "lucide-react";
 
 export default function AddSightModal({ tripId, day, onClose }) {
   const [formData, setFormData] = useState({
@@ -59,8 +60,9 @@ export default function AddSightModal({ tripId, day, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
+      <div className="relative bg-[var(--tw-subbackground)] rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl opacity-100">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-[var(--tw-text)]">
             Add New Sight
@@ -69,19 +71,7 @@ export default function AddSightModal({ tripId, day, onClose }) {
             onClick={onClose}
             className="p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
           >
-            <svg
-              className="w-5 h-5 text-[var(--tw-text)]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="w-5 h-5 text-[var(--tw-text)]" />
           </button>
         </div>
 

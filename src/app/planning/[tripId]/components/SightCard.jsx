@@ -1,201 +1,147 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/AuthContext";
-import { db, doc, getDoc } from "@/lib/firebase";
-import TripHeader from "./components/TripHeader";
+import { useState } from "react";
+import { doc, deleteDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Edit, Trash2 } from "lucide-react";
 
-export default function TripPage() {
-  const params = useParams();
-  const { currentUser } = useAuth();
-  const router = useRouter();
-  const [trip, setTrip] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default function SightCard({ sight, tripId, isLast }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    name: sight.name || "",
+    location: sight.location || "",
+    notes: sight.notes || "",
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const tripId = params.tripId;
-
-  useEffect(() => {
-    const fetchTrip = async () => {
-      if (!currentUser || !tripId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        console.log("Fetching trip:", tripId);
-        const tripDoc = await getDoc(doc(db, "trips", tripId));
-
-        if (!tripDoc.exists()) {
-          console.log("Trip not found");
-          setError("Trip not found");
-          return;
-        }
-
-        const tripData = { id: tripDoc.id, ...tripDoc.data() };
-        console.log("Trip data:", tripData);
-
-        if (!tripData.collaborators?.includes(currentUser.uid)) {
-          setError("You don't have access to this trip");
-          return;
-        }
-
-        setTrip(tripData);
-      } catch (error) {
-        console.error("Error fetching trip:", error);
-        setError("Failed to load trip: " + error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrip();
-  }, [currentUser, tripId]);
-
-  const generateDays = () => {
-    if (!trip?.startDate || !trip?.endDate) return [];
-
-    const start = trip.startDate.toDate
-      ? trip.startDate.toDate()
-      : new Date(trip.startDate);
-    const end = trip.endDate.toDate
-      ? trip.endDate.toDate()
-      : new Date(trip.endDate);
-    const days = [];
-
-    const currentDate = new Date(start);
-    let dayNumber = 1;
-
-    while (currentDate <= end) {
-      days.push({
-        dayNumber,
-        date: new Date(currentDate),
-        dateString: currentDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
+  const handleEdit = async () => {
+    try {
+      await updateDoc(doc(db, "trips", tripId, "itineraryItems", sight.id), {
+        name: editData.name,
+        location: editData.location,
+        notes: editData.notes,
+        updatedAt: new Date(),
       });
-      currentDate.setDate(currentDate.getDate() + 1);
-      dayNumber++;
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating sight:", error);
     }
-
-    return days;
   };
 
-  const handleEditTrip = () => {
-    console.log("Edit trip clicked");
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this sight?")) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, "trips", tripId, "itineraryItems", sight.id));
+    } catch (error) {
+      console.error("Error deleting sight:", error);
+      setIsDeleting(false);
+    }
   };
 
-  const handleShareTrip = () => {
-    console.log("Share trip clicked");
+  const handleCancel = () => {
+    setEditData({
+      name: sight.name || "",
+      location: sight.location || "",
+      notes: sight.notes || "",
+    });
+    setIsEditing(false);
   };
 
-  const handleDeleteTrip = () => {
-    console.log("Delete trip clicked");
-  };
-
-  if (loading) {
+  if (isDeleting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus)] mx-auto mb-4"></div>
-          <p className="text-[var(--tw-text)]">Loading trip...</p>
-        </div>
+      <div className="flex items-center space-x-4 opacity-50">
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--tw-focus)]"></div>
+        <span className="text-[var(--tw-text)] opacity-70">Deleting...</span>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-            Error
-          </h1>
-          <p className="text-[var(--tw-text)] opacity-70 mb-6">{error}</p>
-          <button
-            onClick={() => router.push("/")}
-            className="bg-[var(--tw-focus)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!trip) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-            Trip Not Found
-          </h1>
-          <button
-            onClick={() => router.push("/")}
-            className="bg-[var(--tw-focus)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const days = generateDays();
 
   return (
-    <div className="min-h-screen bg-[var(--tw-background)] pt-20 pb-8">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <TripHeader
-          trip={trip}
-          onEdit={handleEditTrip}
-          onShare={handleShareTrip}
-          onDelete={handleDeleteTrip}
-        />
+    <div className="flex items-start space-x-4">
+      <div className="flex flex-col items-center">
+        <div className="w-3 h-3 bg-[var(--tw-focus)] rounded-full"></div>
+        {!isLast && (
+          <div className="w-0.5 h-16 bg-[var(--tw-field)] mt-2"></div>
+        )}
+      </div>
 
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-            Day-by-Day Schedule
-          </h2>
-
-          {days.length === 0 ? (
-            <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
-              <p className="text-[var(--tw-text)] opacity-70">
-                No days to display. Please check your trip dates.
-              </p>
-            </div>
-          ) : (
-            days.map((day) => (
-              <div
-                key={day.dayNumber}
-                className="bg-[var(--tw-subbackground)] rounded-lg p-6"
+      <div className="flex-1 bg-[var(--tw-field)] rounded-lg p-4">
+        {isEditing ? (
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={editData.name}
+              onChange={(e) =>
+                setEditData({ ...editData, name: e.target.value })
+              }
+              className="w-full bg-[var(--tw-subbackground)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-[var(--tw-text)]"
+              placeholder="Sight name"
+            />
+            <input
+              type="text"
+              value={editData.location}
+              onChange={(e) =>
+                setEditData({ ...editData, location: e.target.value })
+              }
+              className="w-full bg-[var(--tw-subbackground)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-[var(--tw-text)]"
+              placeholder="Location"
+            />
+            <textarea
+              value={editData.notes}
+              onChange={(e) =>
+                setEditData({ ...editData, notes: e.target.value })
+              }
+              className="w-full bg-[var(--tw-subbackground)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-[var(--tw-text)] resize-none"
+              placeholder="Notes (optional)"
+              rows={2}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleEdit}
+                className="bg-[var(--tw-focus)] text-white px-3 py-1 rounded text-sm hover:bg-opacity-90 transition-colors"
               >
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-[var(--tw-text)]">
-                      Day {day.dayNumber}
-                    </h3>
-                    <p className="text-[var(--tw-text)] opacity-70">
-                      {day.dateString}
-                    </p>
-                  </div>
-                  <button className="bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
-                    Add Sight
-                  </button>
-                </div>
-
-                <div className="border-l-2 border-[var(--tw-field)] pl-4">
-                  <p className="text-[var(--tw-text)] opacity-60 italic">
-                    No activities planned for this day yet.
-                  </p>
-                </div>
+                Save
+              </button>
+              <button
+                onClick={handleCancel}
+                className="bg-[var(--tw-field)] text-[var(--tw-text)] px-3 py-1 rounded text-sm hover:bg-opacity-80 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <h4 className="font-semibold text-[var(--tw-text)]">
+                {sight.name}
+              </h4>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
+                >
+                  <Edit className="w-4 h-4 text-[var(--tw-text)] opacity-60" />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500 opacity-60" />
+                </button>
               </div>
-            ))
-          )}
-        </div>
+            </div>
+            <p className="text-[var(--tw-text)] opacity-70 text-sm mb-1">
+              {sight.location}
+            </p>
+            {sight.notes && (
+              <p className="text-[var(--tw-text)] opacity-60 text-sm">
+                {sight.notes}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

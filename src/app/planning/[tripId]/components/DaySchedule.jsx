@@ -64,7 +64,7 @@ export default function DaySchedule({ tripId, day, dayNumber }) {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+          className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
         >
           Add Sight
         </button>
