@@ -10,12 +10,12 @@ import {
   query,
   getDocs,
   writeBatch,
-  setIndexConfiguration,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import TripHeader from "./components/TripHeader";
 import DaySchedule from "./components/DaySchedule";
 import EditTripModal from "./components/EditTripModal";
+import InviteCollaboratorModal from "./components/InviteCollaboratorModal";
 
 export default function TripPage() {
   const params = useParams();
@@ -26,6 +26,7 @@ export default function TripPage() {
   const [error, setError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const tripId = params.tripId;
 
@@ -37,17 +38,14 @@ export default function TripPage() {
       }
 
       try {
-        console.log("Fetching trip:", tripId);
         const tripDoc = await getDoc(doc(db, "trips", tripId));
 
         if (!tripDoc.exists()) {
-          console.log("Trip not found");
           setError("Trip not found");
           return;
         }
 
         const tripData = { id: tripDoc.id, ...tripDoc.data() };
-        console.log("Trip data:", tripData);
 
         if (!tripData.collaborators?.includes(currentUser.uid)) {
           setError("You don't have access to this trip");
@@ -56,7 +54,6 @@ export default function TripPage() {
 
         setTrip(tripData);
       } catch (error) {
-        console.error("Error fetching trip:", error);
         setError("Failed to load trip: " + error.message);
       } finally {
         setLoading(false);
@@ -110,8 +107,12 @@ export default function TripPage() {
     setIsEditModalOpen(false);
   };
 
-  const handleShareTrip = () => {
-    console.log("Share trip clicked");
+  const handleInviteCollaborator = () => {
+    setIsInviteModalOpen(true);
+  };
+
+  const handleCloseInviteModal = () => {
+    setIsInviteModalOpen(false);
   };
 
   const handleDeleteTrip = async () => {
@@ -126,7 +127,6 @@ export default function TripPage() {
     setIsDeleting(true);
 
     try {
-      console.log("Deleting itinerary items...");
       const itineraryQuery = query(
         collection(db, "trips", tripId, "itineraryItems")
       );
@@ -140,17 +140,12 @@ export default function TripPage() {
 
       if (!itinerarySnapshot.empty) {
         await batch.commit();
-        console.log(`Deleted ${itinerarySnapshot.size} itinerary items`);
       }
 
-      console.log("Deleting trip document...");
       await deleteDoc(doc(db, "trips", tripId));
-
-      console.log("Trip deleted successfully");
 
       router.push("/account");
     } catch (error) {
-      console.error("Error deleting trip:", error);
       alert("Failed to delete trip. Please try again.");
       setIsDeleting(false);
     }
@@ -228,7 +223,7 @@ export default function TripPage() {
         <TripHeader
           trip={trip}
           onEdit={handleEditTrip}
-          onShare={handleShareTrip}
+          onInvite={handleInviteCollaborator}
           onDelete={handleDeleteTrip}
         />
 
@@ -260,6 +255,13 @@ export default function TripPage() {
             trip={trip}
             onClose={handleCloseEditModal}
             onUpdate={handleTripUpdate}
+          />
+        )}
+
+        {isInviteModalOpen && (
+          <InviteCollaboratorModal
+            trip={trip}
+            onClose={handleCloseInviteModal}
           />
         )}
       </div>

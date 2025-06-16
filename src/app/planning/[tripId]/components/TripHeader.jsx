@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical } from "lucide-react";
 
-export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
+export default function TripHeader({ trip, onEdit, onInvite, onDelete }) {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -17,13 +17,12 @@ export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
 
   const calculateDuration = () => {
     if (!trip?.startDate || !trip?.endDate) return 0;
-    const start = trip.startDate.toDate
-      ? trip.startDate.toDate()
-      : new Date(trip.startDate);
-    const end = trip.endDate.toDate
-      ? trip.endDate.toDate()
-      : new Date(trip.endDate);
-    return Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    
+    const start = trip.startDate.toDate ? trip.startDate.toDate() : new Date(trip.startDate);
+    const end = trip.endDate.toDate ? trip.endDate.toDate() : new Date(trip.endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
   };
 
   return (
@@ -55,8 +54,8 @@ export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
             <div className="absolute right-0 mt-2 w-48 bg-[var(--tw-subbackground)] border border-[var(--tw-field)] rounded-lg shadow-lg z-10">
               <button
                 onClick={() => {
-                  onEdit && onEdit();
                   setIsMenuOpen(false);
+                  onEdit();
                 }}
                 className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
               >
@@ -64,17 +63,17 @@ export default function TripHeader({ trip, onEdit, onShare, onDelete }) {
               </button>
               <button
                 onClick={() => {
-                  onShare && onShare();
                   setIsMenuOpen(false);
+                  onInvite();
                 }}
                 className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
               >
-                Share by Email
+                Invite Collaborator
               </button>
               <button
                 onClick={() => {
-                  onDelete && onDelete();
                   setIsMenuOpen(false);
+                  onDelete();
                 }}
                 className="cursor-pointer w-full text-left px-4 py-3 text-red-500 hover:bg-[var(--tw-field)] transition-colors"
               >
