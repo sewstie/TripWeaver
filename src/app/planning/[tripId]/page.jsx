@@ -15,6 +15,7 @@ import {
 import { db } from "@/lib/firebase";
 import TripHeader from "./components/TripHeader";
 import DaySchedule from "./components/DaySchedule";
+import EditTripModal from "./components/EditTripModal";
 
 export default function TripPage() {
   const params = useParams();
@@ -24,6 +25,7 @@ export default function TripPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const tripId = params.tripId;
 
@@ -97,7 +99,15 @@ export default function TripPage() {
   };
 
   const handleEditTrip = () => {
-    console.log("Edit trip clicked");
+    setIsEditModalOpen(true);
+  };
+
+  const handleTripUpdate = (updatedTrip) => {
+    setTrip(updatedTrip);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
   };
 
   const handleShareTrip = () => {
@@ -244,6 +254,14 @@ export default function TripPage() {
             ))
           )}
         </div>
+
+        {isEditModalOpen && (
+          <EditTripModal
+            trip={trip}
+            onClose={handleCloseEditModal}
+            onUpdate={handleTripUpdate}
+          />
+        )}
       </div>
     </div>
   );
