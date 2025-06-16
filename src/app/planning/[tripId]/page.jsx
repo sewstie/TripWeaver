@@ -2,7 +2,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  deleteDoc,
+  collection,
+  query,
+  getDocs,
+  writeBatch,
+  setIndexConfiguration,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import TripHeader from "./components/TripHeader";
 import DaySchedule from "./components/DaySchedule";
@@ -14,6 +23,7 @@ export default function TripPage() {
   const [trip, setTrip] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const tripId = params.tripId;
 
@@ -94,9 +104,63 @@ export default function TripPage() {
     console.log("Share trip clicked");
   };
 
-  const handleDeleteTrip = () => {
-    console.log("Delete trip clicked");
+  const handleDeleteTrip = async () => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to permanently delete "${trip?.name}"?\n\nThis action cannot be undone and will delete all itinerary items for this trip.`
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      console.log("Deleting itinerary items...");
+      const itineraryQuery = query(
+        collection(db, "trips", tripId, "itineraryItems")
+      );
+      const itinerarySnapshot = await getDocs(itineraryQuery);
+
+      const batch = writeBatch(db);
+
+      itinerarySnapshot.docs.forEach((docSnapshot) => {
+        batch.delete(docSnapshot.ref);
+      });
+
+      if (!itinerarySnapshot.empty) {
+        await batch.commit();
+        console.log(`Deleted ${itinerarySnapshot.size} itinerary items`);
+      }
+
+      console.log("Deleting trip document...");
+      await deleteDoc(doc(db, "trips", tripId));
+
+      console.log("Trip deleted successfully");
+
+      router.push("/account");
+    } catch (error) {
+      console.error("Error deleting trip:", error);
+      alert("Failed to delete trip. Please try again.");
+      setIsDeleting(false);
+    }
   };
+
+  if (isDeleting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold text-[var(--tw-text)] mb-2">
+            Deleting Trip...
+          </h2>
+          <p className="text-[var(--tw-text)] opacity-70">
+            Please wait while we remove all trip data.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
