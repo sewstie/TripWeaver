@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
 import { MoreVertical } from "lucide-react";
 
-export default function TripHeader({ trip, onEdit, onInvite, onDelete }) {
+export default function TripHeader({ trip, onEdit, onManageAccess, onDelete }) {
+  const { currentUser } = useAuth();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -17,13 +19,21 @@ export default function TripHeader({ trip, onEdit, onInvite, onDelete }) {
 
   const calculateDuration = () => {
     if (!trip?.startDate || !trip?.endDate) return 0;
-    
-    const start = trip.startDate.toDate ? trip.startDate.toDate() : new Date(trip.startDate);
-    const end = trip.endDate.toDate ? trip.endDate.toDate() : new Date(trip.endDate);
+
+    const start = trip.startDate.toDate
+      ? trip.startDate.toDate()
+      : new Date(trip.startDate);
+    const end = trip.endDate.toDate
+      ? trip.endDate.toDate()
+      : new Date(trip.endDate);
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays;
   };
+
+  const isOwner = trip?.collaborators?.[currentUser?.uid] === "owner";
+  const canEdit =
+    isOwner || trip?.collaborators?.[currentUser?.uid] === "editor";
 
   return (
     <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 mb-6">
@@ -52,33 +62,37 @@ export default function TripHeader({ trip, onEdit, onInvite, onDelete }) {
 
           {isMenuOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-[var(--tw-subbackground)] border border-[var(--tw-field)] rounded-lg shadow-lg z-10">
+              {canEdit && (
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onEdit();
+                  }}
+                  className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
+                >
+                  Edit Trip Details
+                </button>
+              )}
               <button
                 onClick={() => {
                   setIsMenuOpen(false);
-                  onEdit();
+                  onManageAccess();
                 }}
                 className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
               >
-                Edit Trip Details
+                Manage Access
               </button>
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onInvite();
-                }}
-                className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
-              >
-                Invite Collaborator
-              </button>
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onDelete();
-                }}
-                className="cursor-pointer w-full text-left px-4 py-3 text-red-500 hover:bg-[var(--tw-field)] transition-colors"
-              >
-                Delete Trip
-              </button>
+              {isOwner && (
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onDelete();
+                  }}
+                  className="cursor-pointer w-full text-left px-4 py-3 text-red-500 hover:bg-[var(--tw-field)] transition-colors"
+                >
+                  Delete Trip
+                </button>
+              )}
             </div>
           )}
         </div>
