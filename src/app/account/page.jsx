@@ -24,44 +24,26 @@ export default function AccountPage() {
       if (!currentUser) return;
 
       try {
-        const q = query(
+        setIsLoadingTrips(true);
+
+        const tripsQuery = query(
           collection(db, "trips"),
-          where("collaborators", "array-contains", currentUser.uid),
           orderBy("createdAt", "desc")
         );
 
-        const querySnapshot = await getDocs(q);
-        const userTrips = querySnapshot.docs.map((doc) => ({
+        const querySnapshot = await getDocs(tripsQuery);
+        const allTrips = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
 
+        const userTrips = allTrips.filter(
+          (trip) => trip.collaborators && trip.collaborators[currentUser.uid]
+        );
+
         setTrips(userTrips);
       } catch (error) {
-        if (error.code === "failed-precondition") {
-          console.log("Index is still building. Please wait...");
-
-          const fallbackQuery = query(
-            collection(db, "trips"),
-            where("collaborators", "array-contains", currentUser.uid)
-          );
-
-          const querySnapshot = await getDocs(fallbackQuery);
-          let userTrips = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-
-          userTrips.sort((a, b) => {
-            const aDate = a.createdAt?.toDate?.() || new Date(0);
-            const bDate = b.createdAt?.toDate?.() || new Date(0);
-            return bDate - aDate;
-          });
-
-          setTrips(userTrips);
-        } else {
-          console.error("Error fetching trips:", error);
-        }
+        console.error("Error fetching trips:", error);
       } finally {
         setIsLoadingTrips(false);
       }

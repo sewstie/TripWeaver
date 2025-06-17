@@ -120,7 +120,8 @@ export default function ManageAccessModal({ trip, onClose }) {
         return;
       }
 
-      await updateDoc(doc(db, "trips", trip.id), {
+      const tripRef = doc(db, "trips", trip.id);
+      await updateDoc(tripRef, {
         [`collaborators.${userId}`]: selectedRole,
         updatedAt: new Date(),
       });
@@ -141,7 +142,8 @@ export default function ManageAccessModal({ trip, onClose }) {
         setMessageType("");
       }, 3000);
     } catch (error) {
-      setMessage("Failed to invite collaborator. Please try again.");
+      console.error("Invitation error:", error);
+      setMessage(`Failed to invite collaborator: ${error.message}`);
       setMessageType("error");
     } finally {
       setIsSubmitting(false);
@@ -237,7 +239,7 @@ export default function ManageAccessModal({ trip, onClose }) {
           </h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
+            className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-[var(--tw-text)]" />
           </button>
@@ -312,7 +314,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                                 collaborator.displayName
                               )
                             }
-                            className="p-1 hover:bg-red-100 rounded transition-colors"
+                            className="cursor-pointer p-1 hover:bg-red-100 rounded transition-colors"
                             title="Remove access"
                           >
                             <Trash2 className="w-4 h-4 text-red-500" />
@@ -365,7 +367,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                 <button
                   type="submit"
                   disabled={isSubmitting || messageType === "success"}
-                  className="w-full bg-[var(--tw-focus)] text-white py-2 px-4 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="cursor-pointer w-full bg-[var(--tw-focus)] text-white py-2 px-4 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Inviting..." : "Send Invitation"}
                 </button>

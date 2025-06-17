@@ -191,7 +191,7 @@ export default function TripPage() {
           <p className="text-[var(--tw-text)] opacity-70 mb-6">{error}</p>
           <button
             onClick={() => router.push("/")}
-            className="bg-[var(--tw-focus)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+            className="cursor-pointer bg-[var(--tw-focus)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
           >
             Go Home
           </button>

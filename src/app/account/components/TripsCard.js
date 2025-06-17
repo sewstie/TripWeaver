@@ -10,6 +10,7 @@ import {
   deleteDoc,
   doc,
   orderBy,
+  getDoc,
 } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
@@ -25,25 +26,24 @@ export default function TripsCard() {
       if (!currentUser) return;
 
       try {
-        const q = query(
+        const tripsQuery = query(
           collection(db, "trips"),
-          where("collaborators", "array-contains", currentUser.uid),
           orderBy("createdAt", "desc")
         );
 
-        const querySnapshot = await getDocs(q);
-        const userTrips = querySnapshot.docs.map((doc) => ({
+        const querySnapshot = await getDocs(tripsQuery);
+        const allTrips = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
 
+        const userTrips = allTrips.filter(
+          (trip) => trip.collaborators && trip.collaborators[currentUser.uid]
+        );
+
         setTrips(userTrips);
       } catch (error) {
-        if (error.code === "failed-precondition") {
-          console.log("Index is still building. Please wait...");
-        } else {
-          console.error("Error fetching trips:", error);
-        }
+        console.error("Error fetching trips:", error);
       } finally {
         setIsLoading(false);
       }
@@ -64,8 +64,18 @@ export default function TripsCard() {
     e.stopPropagation();
     if (window.confirm("Are you sure you want to delete this trip?")) {
       try {
-        await deleteDoc(doc(db, "trips", tripId));
-        setTrips(trips.filter((trip) => trip.id !== tripId));
+        const tripRef = doc(db, "trips", tripId);
+        const tripDoc = await getDoc(tripRef);
+
+        if (tripDoc.exists()) {
+          const tripData = tripDoc.data();
+          if (tripData.collaborators[currentUser.uid] === "owner") {
+            await deleteDoc(tripRef);
+            setTrips(trips.filter((trip) => trip.id !== tripId));
+          } else {
+            alert("Only the trip owner can delete this trip.");
+          }
+        }
       } catch (error) {
         console.error("Error deleting trip:", error);
       }
@@ -109,7 +119,7 @@ export default function TripsCard() {
               <div
                 key={trip.id}
                 onClick={() => handleTripClick(trip)}
-                className="bg-[var(--tw-field)] flex justify-between rounded-lg p-4 hover:bg-opacity-80 transition-colors cursor-pointer"
+                className="gap-2 bg-[var(--tw-field)] flex justify-between rounded-lg p-4 hover:bg-opacity-80 transition-colors cursor-pointer"
               >
                 <div className="flex flex-col justify-between">
                   <h3 className="text-lg font-semibold text-[var(--tw-text)]">

@@ -6,7 +6,15 @@ import { Button } from "@/app/components/ui/button";
 import { CalendarIcon, MapPin, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { db, collection, addDoc, serverTimestamp } from "@/lib/firebase";
+import {
+  db,
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  orderBy,
+  getDocs,
+} from "@/lib/firebase";
 
 export default function TripSearch() {
   const [searchData, setSearchData] = useState({
@@ -211,7 +219,9 @@ export default function TripSearch() {
         startDate: searchData.startDate,
         endDate: searchData.endDate,
         ownerId: currentUser.uid,
-        collaborators: [currentUser.uid],
+        collaborators: {
+          [currentUser.uid]: "owner",
+        },
         createdAt: serverTimestamp(),
         itinerary: [],
         budget: {
