@@ -11,7 +11,7 @@ import { db } from "@/lib/firebase";
 import SightCard from "./SightCard";
 import AddSightModal from "./AddSightModal";
 
-export default function DaySchedule({ tripId, day, dayNumber }) {
+export default function DaySchedule({ tripId, day, dayNumber, userRole }) {
   const [sights, setSights] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSight, setEditingSight] = useState(null);
@@ -64,6 +64,8 @@ export default function DaySchedule({ tripId, day, dayNumber }) {
     setEditingSight(null);
   };
 
+  const canEdit = userRole && userRole !== "viewer";
+
   return (
     <div className="bg-[var(--tw-subbackground)] rounded-lg p-6">
       <div className="flex justify-between items-center mb-4">
@@ -73,12 +75,14 @@ export default function DaySchedule({ tripId, day, dayNumber }) {
           </h3>
           <p className="text-[var(--tw-text)] opacity-70">{formatDate(day)}</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
-        >
-          Add Sight
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+          >
+            Add Sight
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -100,12 +104,13 @@ export default function DaySchedule({ tripId, day, dayNumber }) {
               tripId={tripId}
               isLast={index === sights.length - 1}
               onEdit={handleEditSight}
+              canEdit={canEdit}
             />
           ))
         )}
       </div>
 
-      {isModalOpen && (
+      {canEdit && isModalOpen && (
         <AddSightModal
           tripId={tripId}
           day={day.toISOString().split("T")[0]}
