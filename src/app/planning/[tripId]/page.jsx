@@ -15,7 +15,7 @@ import { db } from "@/lib/firebase";
 import TripHeader from "./components/TripHeader";
 import DaySchedule from "./components/DaySchedule";
 import EditTripModal from "./components/EditTripModal";
-import InviteCollaboratorModal from "./components/InviteCollaboratorModal";
+import ManageAccessModal from "./components/ManageAccessModal";
 
 export default function TripPage() {
   const params = useParams();
@@ -26,7 +26,7 @@ export default function TripPage() {
   const [error, setError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isManageAccessModalOpen, setIsManageAccessModalOpen] = useState(false);
 
   const tripId = params.tripId;
 
@@ -47,7 +47,7 @@ export default function TripPage() {
 
         const tripData = { id: tripDoc.id, ...tripDoc.data() };
 
-        if (!tripData.collaborators?.includes(currentUser.uid)) {
+        if (!tripData.collaborators?.[currentUser.uid]) {
           setError("You don't have access to this trip");
           return;
         }
@@ -107,12 +107,12 @@ export default function TripPage() {
     setIsEditModalOpen(false);
   };
 
-  const handleInviteCollaborator = () => {
-    setIsInviteModalOpen(true);
+  const handleManageAccess = () => {
+    setIsManageAccessModalOpen(true);
   };
 
-  const handleCloseInviteModal = () => {
-    setIsInviteModalOpen(false);
+  const handleCloseManageAccessModal = () => {
+    setIsManageAccessModalOpen(false);
   };
 
   const handleDeleteTrip = async () => {
@@ -150,6 +150,9 @@ export default function TripPage() {
       setIsDeleting(false);
     }
   };
+
+  const userRole = trip?.collaborators?.[currentUser?.uid];
+  const canEdit = userRole === "owner" || userRole === "editor";
 
   if (isDeleting) {
     return (
@@ -223,7 +226,7 @@ export default function TripPage() {
         <TripHeader
           trip={trip}
           onEdit={handleEditTrip}
-          onInvite={handleInviteCollaborator}
+          onManageAccess={handleManageAccess}
           onDelete={handleDeleteTrip}
         />
 
@@ -245,12 +248,13 @@ export default function TripPage() {
                 tripId={tripId}
                 day={day.date}
                 dayNumber={day.dayNumber}
+                canEdit={canEdit}
               />
             ))
           )}
         </div>
 
-        {isEditModalOpen && (
+        {isEditModalOpen && canEdit && (
           <EditTripModal
             trip={trip}
             onClose={handleCloseEditModal}
@@ -258,10 +262,10 @@ export default function TripPage() {
           />
         )}
 
-        {isInviteModalOpen && (
-          <InviteCollaboratorModal
+        {isManageAccessModalOpen && (
+          <ManageAccessModal
             trip={trip}
-            onClose={handleCloseInviteModal}
+            onClose={handleCloseManageAccessModal}
           />
         )}
       </div>
