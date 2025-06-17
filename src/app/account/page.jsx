@@ -80,7 +80,7 @@ export default function AccountPage() {
             <ProfileCard />
           </div>
           <div className="lg:col-span-2">
-            <TripsCard />
+            <TripsCard trips={trips} setTrips={setTrips} />
           </div>
         </div>
 

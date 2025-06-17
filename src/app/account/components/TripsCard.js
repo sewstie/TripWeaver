@@ -1,56 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  db,
-  collection,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
-  doc,
-  orderBy,
-  getDoc,
-} from "@/lib/firebase";
+import { db, deleteDoc, doc, getDoc } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 
-export default function TripsCard() {
+export default function TripsCard({ trips, setTrips }) {
   const { currentUser } = useAuth();
-  const [trips, setTrips] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    const fetchTrips = async () => {
-      if (!currentUser) return;
-
-      try {
-        const tripsQuery = query(
-          collection(db, "trips"),
-          orderBy("createdAt", "desc")
-        );
-
-        const querySnapshot = await getDocs(tripsQuery);
-        const allTrips = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        const userTrips = allTrips.filter(
-          (trip) => trip.collaborators && trip.collaborators[currentUser.uid]
-        );
-
-        setTrips(userTrips);
-      } catch (error) {
-        console.error("Error fetching trips:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTrips();
-  }, [currentUser]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "Not set";
