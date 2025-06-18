@@ -1,5 +1,6 @@
 "use client";
 import { X, AlertTriangle } from "lucide-react";
+import { useEffect } from "react";
 
 export default function Confirmation({
   isOpen,
@@ -11,7 +12,20 @@ export default function Confirmation({
   cancelText = "Cancel",
   type = "warning",
   isLoading = false,
+  singleButton = false,
 }) {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const getTypeStyles = () => {
@@ -45,9 +59,17 @@ export default function Confirmation({
     }
   };
 
+  const handleConfirm = () => {
+    if (singleButton) {
+      onClose();
+    } else {
+      onConfirm();
+    }
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 max-h-screen flex items-center justify-center"
       onClick={handleBackdropClick}
     >
       <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
@@ -61,7 +83,7 @@ export default function Confirmation({
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-[var(--tw-field)] rounded transition-colors"
+            className="cursor-pointer p-1 hover:bg-[var(--tw-field)] rounded transition-colors"
             disabled={isLoading}
           >
             <X className="w-5 h-5 text-[var(--tw-text)]" />
@@ -73,15 +95,17 @@ export default function Confirmation({
         </div>
 
         <div className="flex gap-3 justify-end">
+          {!singleButton && (
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="cursor-pointer px-4 py-2 bg-[var(--tw-field)] text-[var(--tw-text)] rounded-lg hover:bg-opacity-80 transition-colors disabled:opacity-50"
+            >
+              {cancelText}
+            </button>
+          )}
           <button
-            onClick={onClose}
-            disabled={isLoading}
-            className="cursor-pointer px-4 py-2 bg-[var(--tw-field)] text-[var(--tw-text)] rounded-lg hover:bg-opacity-80 transition-colors disabled:opacity-50"
-          >
-            {cancelText}
-          </button>
-          <button
-            onClick={onConfirm}
+            onClick={handleConfirm}
             disabled={isLoading}
             className={`cursor-pointer px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 ${styles.confirmButton}`}
           >
