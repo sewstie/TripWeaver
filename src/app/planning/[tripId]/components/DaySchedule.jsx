@@ -6,8 +6,28 @@ import {
   where,
   orderBy,
   onSnapshot,
+  writeBatch,
+  doc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import {
+  restrictToVerticalAxis,
+  restrictToParentElement,
+} from "@dnd-kit/modifiers";
 import SightCard from "./SightCard";
 import AddSightModal from "./AddSightModal";
 
@@ -16,6 +36,18 @@ export default function DaySchedule({ tripId, day, dayNumber, userRole }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSight, setEditingSight] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isReordering, setIsReordering] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     const dayString = day.toISOString().split("T")[0];
@@ -64,6 +96,42 @@ export default function DaySchedule({ tripId, day, dayNumber, userRole }) {
     setEditingSight(null);
   };
 
+  const updateOrderInFirestore = async (newSightsOrder) => {
+    setIsReordering(true);
+    try {
+      const batch = writeBatch(db);
+
+      newSightsOrder.forEach((sight, index) => {
+        const sightRef = doc(db, "trips", tripId, "itineraryItems", sight.id);
+        batch.update(sightRef, {
+          order: index,
+          updatedAt: new Date(),
+        });
+      });
+
+      await batch.commit();
+    } catch (error) {
+      console.error("Error updating order:", error);
+      setSights(sights);
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = sights.findIndex((sight) => sight.id === active.id);
+      const newIndex = sights.findIndex((sight) => sight.id === over.id);
+
+      const newSightsOrder = arrayMove(sights, oldIndex, newIndex);
+      setSights(newSightsOrder);
+
+      updateOrderInFirestore(newSightsOrder);
+    }
+  };
+
   const canEdit = userRole && userRole !== "viewer";
 
   return (
@@ -97,16 +165,29 @@ export default function DaySchedule({ tripId, day, dayNumber, userRole }) {
             </p>
           </div>
         ) : (
-          sights.map((sight, index) => (
-            <SightCard
-              key={sight.id}
-              sight={sight}
-              tripId={tripId}
-              isLast={index === sights.length - 1}
-              onEdit={handleEditSight}
-              canEdit={canEdit}
-            />
-          ))
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+          >
+            <SortableContext
+              items={sights.map((sight) => sight.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {sights.map((sight, index) => (
+                <SightCard
+                  key={sight.id}
+                  sight={sight}
+                  tripId={tripId}
+                  isLast={index === sights.length - 1}
+                  onEdit={handleEditSight}
+                  canEdit={canEdit}
+                  isReordering={isReordering}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
