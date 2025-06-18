@@ -276,14 +276,14 @@ export default function ManageAccessModal({ trip, onClose }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center">
                     {collaborator.role === "owner" ? (
-                      <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-lg">
+                      <div className="flex items-center justify-center w-30 gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-lg">
                         {getRoleIcon(collaborator.role)}
                         <span className="text-sm font-medium">Owner</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between w-30">
                         {isOwner && (
                           <select
                             value={collaborator.role}
@@ -298,7 +298,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                         )}
 
                         {!isOwner && (
-                          <div className="flex items-center gap-2 px-3 py-1 bg-[var(--tw-subbackground)] rounded-lg">
+                          <div className="flex justify-center w-30 items-center gap-2 px-3 py-1 bg-[var(--tw-subbackground)] rounded-lg">
                             {getRoleIcon(collaborator.role)}
                             <span className="text-sm">
                               {getRoleDisplayName(collaborator.role)}
@@ -314,10 +314,10 @@ export default function ManageAccessModal({ trip, onClose }) {
                                 collaborator.displayName
                               )
                             }
-                            className="cursor-pointer p-1 hover:bg-red-100 rounded transition-colors"
+                            className="cursor-pointer p-1"
                             title="Remove access"
                           >
-                            <Trash2 className="w-4 h-4 text-red-500" />
+                            <Trash2 className="w-4 h-4 text-red-500 hover:text-red-400 transition-all duration-75" />
                           </button>
                         )}
                       </div>
