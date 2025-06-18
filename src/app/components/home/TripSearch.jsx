@@ -218,11 +218,13 @@ export default function TripSearch() {
         },
         startDate: searchData.startDate,
         endDate: searchData.endDate,
+        createdBy: currentUser.uid,
         ownerId: currentUser.uid,
         collaborators: {
           [currentUser.uid]: "owner",
         },
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
         itinerary: [],
         budget: {
           total: 0,

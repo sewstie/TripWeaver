@@ -14,7 +14,6 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import {
   X,
-  Mail,
   UserPlus,
   CheckCircle,
   Crown,
@@ -25,7 +24,7 @@ import {
 import Confirmation from "@/app/components/Confirmation";
 
 export default function ManageAccessModal({ trip, onClose }) {
-  const { currentUser } = useAuth();
+  const { currentUser, getUserName } = useAuth();
   const [email, setEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("editor");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,42 +38,84 @@ export default function ManageAccessModal({ trip, onClose }) {
     userName: "",
   });
 
+  const getDisplayName = (userData, userId) => {
+    if (!userData) return null;
+    const username = getUserName(userId);
+    if (username) return username;
+    if (userData.displayName) return userData.displayName;
+    return userData.email?.split("@")[0];
+  };
+
   useEffect(() => {
     const fetchCollaboratorDetails = async () => {
-      if (!trip?.collaborators) return;
-
       try {
-        const collaborators = Object.entries(trip.collaborators);
-        const collaboratorPromises = collaborators.map(async ([userId, role]) => {
-          const userQuery = query(
-            collection(db, "users"),
-            where("uid", "==", userId)
-          );
-          const userSnapshot = await getDocs(userQuery);
-          
-          if (!userSnapshot.empty) {
-            const userData = userSnapshot.docs[0].data();
-            return {
-              uid: userId,
-              role,
-              email: userData.email,
-              displayName: userData.displayName || userData.email,
-            };
+        let collaboratorsToProcess = { ...trip.collaborators };
+
+        if (
+          trip.createdBy === currentUser?.uid &&
+          !collaboratorsToProcess[currentUser.uid]
+        ) {
+          collaboratorsToProcess[currentUser.uid] = "owner";
+
+          await updateDoc(doc(db, "trips", trip.id), {
+            [`collaborators.${currentUser.uid}`]: "owner",
+          });
+        }
+
+        const collaborators = Object.entries(collaboratorsToProcess);
+        const collaboratorPromises = collaborators.map(
+          async ([userId, role]) => {
+            try {
+              const userDoc = await getDoc(doc(db, "users", userId));
+
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                return {
+                  uid: userId,
+                  role,
+                  email: userData.email,
+                  displayName: getDisplayName(userData, userId),
+                };
+              }
+
+              if (userId === currentUser?.uid) {
+                return {
+                  uid: userId,
+                  role,
+                  email: currentUser.email,
+                  displayName: getDisplayName(currentUser, userId),
+                };
+              }
+
+              return null;
+            } catch (error) {
+              return null;
+            }
           }
-          return null;
-        });
+        );
 
         const collaboratorData = await Promise.all(collaboratorPromises);
-        setCollaboratorDetails(collaboratorData.filter(Boolean));
+        const validCollaborators = collaboratorData.filter(Boolean);
+
+        const sortedCollaborators = validCollaborators.sort((a, b) => {
+          if (a.role === "owner") return -1;
+          if (b.role === "owner") return 1;
+          if (a.role === "editor" && b.role === "viewer") return -1;
+          if (a.role === "viewer" && b.role === "editor") return 1;
+          return 0;
+        });
+
+        setCollaboratorDetails(sortedCollaborators);
       } catch (error) {
-        console.error("Error fetching collaborator details:", error);
       } finally {
         setLoadingCollaborators(false);
       }
     };
 
-    fetchCollaboratorDetails();
-  }, [trip]);
+    if (trip && currentUser) {
+      fetchCollaboratorDetails();
+    }
+  }, [trip, currentUser]);
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -97,8 +138,9 @@ export default function ManageAccessModal({ trip, onClose }) {
         return;
       }
 
-      const userData = userSnapshot.docs[0].data();
-      const userId = userData.uid;
+      const userDoc = userSnapshot.docs[0];
+      const userData = userDoc.data();
+      const userId = userDoc.id;
 
       if (trip.collaborators && trip.collaborators[userId]) {
         setMessage("User is already a collaborator on this trip.");
@@ -113,18 +155,26 @@ export default function ManageAccessModal({ trip, onClose }) {
       });
 
       setEmail("");
-      setMessage(`Invitation sent to ${userData.email}!`);
+      setMessage(`Invitation sent to ${getDisplayName(userData, userId)}!`);
       setMessageType("success");
 
-      setCollaboratorDetails((prev) => [
-        ...prev,
-        {
-          uid: userId,
-          role: selectedRole,
-          email: userData.email,
-          displayName: userData.displayName || userData.email,
-        },
-      ]);
+      const newCollaborator = {
+        uid: userId,
+        role: selectedRole,
+        email: userData.email,
+        displayName: getDisplayName(userData, userId),
+      };
+
+      setCollaboratorDetails((prev) => {
+        const updated = [...prev, newCollaborator];
+        return updated.sort((a, b) => {
+          if (a.role === "owner") return -1;
+          if (b.role === "owner") return 1;
+          if (a.role === "editor" && b.role === "viewer") return -1;
+          if (a.role === "viewer" && b.role === "editor") return 1;
+          return 0;
+        });
+      });
 
       setTimeout(() => {
         setMessage("");
@@ -145,11 +195,18 @@ export default function ManageAccessModal({ trip, onClose }) {
         updatedAt: new Date(),
       });
 
-      setCollaboratorDetails((prev) =>
-        prev.map((collab) =>
+      setCollaboratorDetails((prev) => {
+        const updated = prev.map((collab) =>
           collab.uid === userId ? { ...collab, role: newRole } : collab
-        )
-      );
+        );
+        return updated.sort((a, b) => {
+          if (a.role === "owner") return -1;
+          if (b.role === "owner") return 1;
+          if (a.role === "editor" && b.role === "viewer") return -1;
+          if (a.role === "viewer" && b.role === "editor") return 1;
+          return 0;
+        });
+      });
 
       setMessage("Role updated successfully");
       setMessageType("success");
@@ -223,7 +280,9 @@ export default function ManageAccessModal({ trip, onClose }) {
     }
   };
 
-  const isOwner = trip.collaborators?.[currentUser?.uid] === "owner";
+  const isOwner =
+    trip.collaborators?.[currentUser?.uid] === "owner" ||
+    trip.createdBy === currentUser?.uid;
 
   return (
     <>
@@ -236,7 +295,7 @@ export default function ManageAccessModal({ trip, onClose }) {
             </h3>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
+              className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
             >
               <X className="w-5 h-5 text-[var(--tw-text)]" />
             </button>
@@ -251,7 +310,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter email address..."
-                    className="w-full bg-[var(--tw-field)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)]"
+                    className="w-full bg-[var(--tw-field)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] placeholder-gray-400"
                     required
                   />
                 </div>
@@ -312,13 +371,13 @@ export default function ManageAccessModal({ trip, onClose }) {
                 {collaboratorDetails.map((collaborator) => (
                   <div
                     key={collaborator.uid}
-                    className="flex items-center justify-between bg-[var(--tw-field)] rounded-lg p-3"
+                    className={`flex items-center justify-between rounded-lg p-3 bg-[var(--tw-field)]`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
                         {getRoleIcon(collaborator.role)}
                         <div>
-                          <div className="font-medium text-[var(--tw-text)]">
+                          <div className="font-medium text-[var(--tw-text)] flex items-center gap-2">
                             {collaborator.displayName}
                             {collaborator.uid === currentUser?.uid && (
                               <span className="text-sm text-[var(--tw-text)] opacity-60 ml-1">
@@ -334,13 +393,18 @@ export default function ManageAccessModal({ trip, onClose }) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {isOwner && collaborator.uid !== currentUser?.uid ? (
+                      {isOwner &&
+                      collaborator.uid !== currentUser?.uid &&
+                      collaborator.role !== "owner" ? (
                         <>
                           <div className="relative">
                             <select
                               value={collaborator.role}
                               onChange={(e) =>
-                                handleRoleChange(collaborator.uid, e.target.value)
+                                handleRoleChange(
+                                  collaborator.uid,
+                                  e.target.value
+                                )
                               }
                               className="bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded px-2 py-1 text-sm text-[var(--tw-text)] focus:outline-none focus:ring-1 focus:ring-[var(--tw-focus)] appearance-none pr-6"
                             >
@@ -363,7 +427,13 @@ export default function ManageAccessModal({ trip, onClose }) {
                           </button>
                         </>
                       ) : (
-                        <span className="px-2 py-1 text-sm bg-[var(--tw-subbackground)] text-[var(--tw-text)] rounded">
+                        <span
+                          className={`px-2 py-1 text-sm rounded  ${
+                            collaborator.role === "owner"
+                              ? "bg-yellow-200 text-yellow-800 font-semibold text-center w-28"
+                              : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] w-28"
+                          }`}
+                        >
                           {getRoleDisplayName(collaborator.role)}
                         </span>
                       )}
@@ -394,7 +464,9 @@ export default function ManageAccessModal({ trip, onClose }) {
 
       <Confirmation
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, userId: null, userName: "" })}
+        onClose={() =>
+          setConfirmModal({ isOpen: false, userId: null, userName: "" })
+        }
         onConfirm={confirmRemoveCollaborator}
         title="Remove Collaborator"
         message={`Are you sure you want to remove ${confirmModal.userName} from this trip? They will lose access to view and edit this trip.`}
