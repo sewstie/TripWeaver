@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import dynamic from "next/dynamic";
 import {
   doc,
   getDoc,
@@ -12,11 +13,14 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Calendar, Map } from "lucide-react";
 import TripHeader from "./components/TripHeader";
 import DaySchedule from "./components/DaySchedule";
 import EditTripModal from "./components/EditTripModal";
 import ManageAccessModal from "./components/ManageAccessModal";
 import Confirmation from "@/app/components/Confirmation";
+
+const TripMap = dynamic(() => import("./components/TripMap"), { ssr: false });
 
 export default function TripPage() {
   const params = useParams();
@@ -29,6 +33,7 @@ export default function TripPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isManageAccessModalOpen, setIsManageAccessModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [viewMode, setViewMode] = useState("schedule");
   const [errorModal, setErrorModal] = useState({
     isOpen: false,
     message: "",
@@ -51,7 +56,10 @@ export default function TripPage() {
 
         const tripData = tripDoc.data();
 
-        if (!tripData.collaborators || !tripData.collaborators[currentUser.uid]) {
+        if (
+          !tripData.collaborators ||
+          !tripData.collaborators[currentUser.uid]
+        ) {
           setError("You don't have access to this trip");
           setLoading(false);
           return;
@@ -236,29 +244,65 @@ export default function TripPage() {
             onDelete={handleDeleteTrip}
           />
 
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-              Day-by-Day Schedule
-            </h2>
-
-            {days.length === 0 ? (
-              <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
-                <p className="text-[var(--tw-text)] opacity-70">
-                  No days to display. Please check your trip dates.
-                </p>
-              </div>
-            ) : (
-              days.map((day) => (
-                <DaySchedule
-                  key={day.dayNumber}
-                  tripId={tripId}
-                  day={day.date}
-                  dayNumber={day.dayNumber}
-                  userRole={userRole}
-                />
-              ))
-            )}
+          <div className="mb-6">
+            <div className="flex bg-[var(--tw-field)] rounded-lg p-1 w-fit">
+              <button
+                onClick={() => setViewMode("schedule")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  viewMode === "schedule"
+                    ? "bg-[var(--tw-focus)] text-white"
+                    : "text-[var(--tw-text)] hover:bg-[var(--tw-subbackground)]"
+                }`}
+              >
+                <Calendar className="w-4 h-4" />
+                Schedule
+              </button>
+              <button
+                onClick={() => setViewMode("map")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  viewMode === "map"
+                    ? "bg-[var(--tw-focus)] text-white"
+                    : "text-[var(--tw-text)] hover:bg-[var(--tw-subbackground)]"
+                }`}
+              >
+                <Map className="w-4 h-4" />
+                Map
+              </button>
+            </div>
           </div>
+
+          {viewMode === "schedule" ? (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
+                Day-by-Day Schedule
+              </h2>
+
+              {days.length === 0 ? (
+                <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
+                  <p className="text-[var(--tw-text)] opacity-70">
+                    No days to display. Please check your trip dates.
+                  </p>
+                </div>
+              ) : (
+                days.map((day) => (
+                  <DaySchedule
+                    key={day.dayNumber}
+                    tripId={tripId}
+                    day={day.date}
+                    dayNumber={day.dayNumber}
+                    userRole={userRole}
+                  />
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
+                Trip Map
+              </h2>
+              <TripMap />
+            </div>
+          )}
 
           {isEditModalOpen && canEdit && (
             <EditTripModal
