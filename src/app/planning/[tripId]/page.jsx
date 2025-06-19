@@ -34,6 +34,7 @@ export default function TripPage() {
   const [isManageAccessModalOpen, setIsManageAccessModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [viewMode, setViewMode] = useState("schedule");
+  const [mapPoints, setMapPoints] = useState([]);
   const [errorModal, setErrorModal] = useState({
     isOpen: false,
     message: "",
@@ -76,6 +77,42 @@ export default function TripPage() {
 
     fetchTrip();
   }, [currentUser, tripId]);
+
+  useEffect(() => {
+    const fetchItineraryItems = async () => {
+      if (!tripId) return;
+
+      try {
+        const itineraryQuery = query(
+          collection(db, "trips", tripId, "itineraryItems")
+        );
+        const querySnapshot = await getDocs(itineraryQuery);
+
+        const itemsWithCoordinates = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (
+            data.coordinates &&
+            data.coordinates.lat &&
+            data.coordinates.lng
+          ) {
+            itemsWithCoordinates.push({
+              id: doc.id,
+              ...data,
+            });
+          }
+        });
+
+        setMapPoints(itemsWithCoordinates);
+      } catch (error) {
+        console.error("Error fetching itinerary items:", error);
+      }
+    };
+
+    if (tripId) {
+      fetchItineraryItems();
+    }
+  }, [tripId]);
 
   const generateDays = () => {
     if (!trip?.startDate || !trip?.endDate) return [];
@@ -300,7 +337,15 @@ export default function TripPage() {
               <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
                 Trip Map
               </h2>
-              <TripMap />
+              <TripMap mapPoints={mapPoints} />
+              {mapPoints.length === 0 && (
+                <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
+                  <p className="text-[var(--tw-text)] opacity-70">
+                    No locations with coordinates found. Add coordinates to your
+                    sights to see them on the map.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
