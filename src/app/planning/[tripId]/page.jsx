@@ -1,18 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/AuthContext";
-import dynamic from "next/dynamic";
 import {
   doc,
   getDoc,
   deleteDoc,
   collection,
   query,
-  getDocs,
-  writeBatch,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/AuthContext";
+import dynamic from "next/dynamic";
 import { Calendar, Map } from "lucide-react";
 import TripHeader from "./components/TripHeader";
 import DaySchedule from "./components/DaySchedule";
@@ -40,11 +39,56 @@ export default function TripPage() {
     message: "",
   });
 
+  const handleSightAdded = (newSight) => {
+    if (newSight.coordinates) {
+      setMapPoints((prev) => {
+        const existingIndex = prev.findIndex(
+          (point) => point.id === newSight.id
+        );
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            id: newSight.id,
+            name: newSight.name,
+            location: newSight.location,
+            coordinates: newSight.coordinates,
+            day: newSight.day,
+            notes: newSight.notes,
+          };
+          return updated;
+        } else {
+          return [
+            ...prev,
+            {
+              id: newSight.id,
+              name: newSight.name,
+              location: newSight.location,
+              coordinates: newSight.coordinates,
+              day: newSight.day,
+              notes: newSight.notes,
+            },
+          ];
+        }
+      });
+    }
+  };
+
+  const tripWithCallback = trip
+    ? {
+        ...trip,
+        onMapUpdate: handleSightAdded,
+      }
+    : null;
+
   const tripId = params.tripId;
 
   useEffect(() => {
     const fetchTrip = async () => {
-      if (!currentUser) return;
+      if (!currentUser) {
+        setError("Please log in to view this trip");
+        setLoading(false);
+        return;
+      }
 
       try {
         const tripDoc = await getDoc(doc(db, "trips", tripId));
@@ -55,7 +99,7 @@ export default function TripPage() {
           return;
         }
 
-        const tripData = tripDoc.data();
+        const tripData = { id: tripDoc.id, ...tripDoc.data() };
 
         if (
           !tripData.collaborators ||
@@ -66,11 +110,11 @@ export default function TripPage() {
           return;
         }
 
-        setTrip({ id: tripDoc.id, ...tripData });
+        setTrip(tripData);
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching trip:", error);
         setError("Failed to load trip");
-      } finally {
         setLoading(false);
       }
     };
@@ -79,39 +123,35 @@ export default function TripPage() {
   }, [currentUser, tripId]);
 
   useEffect(() => {
-    const fetchItineraryItems = async () => {
-      if (!tripId) return;
+    if (!tripId) return;
 
-      try {
-        const itineraryQuery = query(
-          collection(db, "trips", tripId, "itineraryItems")
-        );
-        const querySnapshot = await getDocs(itineraryQuery);
+    const q = query(collection(db, "trips", tripId, "itineraryItems"));
 
-        const itemsWithCoordinates = [];
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const items = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          if (
-            data.coordinates &&
-            data.coordinates.lat &&
-            data.coordinates.lng
-          ) {
-            itemsWithCoordinates.push({
+          if (data.coordinates) {
+            items.push({
               id: doc.id,
-              ...data,
+              name: data.name,
+              location: data.location,
+              coordinates: data.coordinates,
+              day: data.day,
+              notes: data.notes,
             });
           }
         });
-
-        setMapPoints(itemsWithCoordinates);
-      } catch (error) {
+        setMapPoints(items);
+      },
+      (error) => {
         console.error("Error fetching itinerary items:", error);
       }
-    };
+    );
 
-    if (tripId) {
-      fetchItineraryItems();
-    }
+    return () => unsubscribe();
   }, [tripId]);
 
   const generateDays = () => {
@@ -175,30 +215,15 @@ export default function TripPage() {
     setIsDeleting(true);
 
     try {
-      const itineraryQuery = query(
-        collection(db, "trips", tripId, "itineraryItems")
-      );
-      const itinerarySnapshot = await getDocs(itineraryQuery);
-
-      const batch = writeBatch(db);
-
-      itinerarySnapshot.docs.forEach((docSnapshot) => {
-        batch.delete(docSnapshot.ref);
-      });
-
-      if (!itinerarySnapshot.empty) {
-        await batch.commit();
-      }
-
       await deleteDoc(doc(db, "trips", tripId));
-
-      router.push("/account");
+      router.push("/trips");
     } catch (error) {
-      setIsDeleting(false);
+      console.error("Error deleting trip:", error);
       setErrorModal({
         isOpen: true,
         message: "Failed to delete trip. Please try again.",
       });
+      setIsDeleting(false);
     }
   };
 
@@ -224,10 +249,7 @@ export default function TripPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus)] mx-auto mb-4"></div>
-          <p className="text-[var(--tw-text)]">Loading trip...</p>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus)]"></div>
       </div>
     );
   }
@@ -236,15 +258,8 @@ export default function TripPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-            {error}
-          </h2>
-          <button
-            onClick={() => router.push("/account")}
-            className="cursor-pointer bg-[var(--tw-focus)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
-          >
-            Back to Account
-          </button>
+          <h2 className="text-xl font-bold text-red-500 mb-2">Error</h2>
+          <p className="text-[var(--tw-text)] opacity-70">{error}</p>
         </div>
       </div>
     );
@@ -254,15 +269,13 @@ export default function TripPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-            Trip not found
+          <h2 className="text-xl font-bold text-[var(--tw-text)] mb-2">
+            Trip Not Found
           </h2>
-          <button
-            onClick={() => router.push("/account")}
-            className="cursor-pointer bg-[var(--tw-focus)] text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
-          >
-            Back to Account
-          </button>
+          <p className="text-[var(--tw-text)] opacity-70">
+            The trip you're looking for doesn't exist or you don't have access
+            to it.
+          </p>
         </div>
       </div>
     );
@@ -328,6 +341,7 @@ export default function TripPage() {
                     day={day.date}
                     dayNumber={day.dayNumber}
                     userRole={userRole}
+                    trip={tripWithCallback}
                   />
                 ))
               )}

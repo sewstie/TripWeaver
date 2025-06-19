@@ -31,7 +31,13 @@ import {
 import SightCard from "./SightCard";
 import AddSightModal from "./AddSightModal";
 
-export default function DaySchedule({ tripId, day, dayNumber, userRole }) {
+export default function DaySchedule({
+  tripId,
+  day,
+  dayNumber,
+  userRole,
+  trip,
+}) {
   const [sights, setSights] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSight, setEditingSight] = useState(null);
@@ -91,6 +97,10 @@ export default function DaySchedule({ tripId, day, dayNumber, userRole }) {
     setIsModalOpen(true);
   };
 
+  const handleAddSight = () => {
+    setIsModalOpen(true);
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingSight(null);
@@ -145,7 +155,7 @@ export default function DaySchedule({ tripId, day, dayNumber, userRole }) {
         </div>
         {canEdit && (
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleAddSight}
             className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
           >
             Add Sight
@@ -196,7 +206,9 @@ export default function DaySchedule({ tripId, day, dayNumber, userRole }) {
           tripId={tripId}
           day={day.toISOString().split("T")[0]}
           editingSight={editingSight}
+          trip={trip}
           onClose={handleCloseModal}
+          onSightAdded={trip.onMapUpdate}
         />
       )}
     </div>

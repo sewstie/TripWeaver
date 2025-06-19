@@ -1,18 +1,33 @@
 "use client";
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, MapPin } from "lucide-react";
 import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { geocodeLocation } from "@/lib/geocoding";
 
-export default function AddSightModal({ tripId, day, editingSight, onClose }) {
+export default function AddSightModal({
+  tripId,
+  day,
+  editingSight,
+  onClose,
+  trip,
+  onSightAdded,
+}) {
   const [formData, setFormData] = useState({
     name: "",
     location: "",
     notes: "",
   });
+  const [selectedCoordinates, setSelectedCoordinates] = useState(null); // Add this state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [isSearchingLocations, setIsSearchingLocations] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState(null);
+
+  const locationInputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   useEffect(() => {
     if (editingSight) {
@@ -21,8 +36,172 @@ export default function AddSightModal({ tripId, day, editingSight, onClose }) {
         location: editingSight.location || "",
         notes: editingSight.notes || "",
       });
+      // Set coordinates if editing an existing sight
+      if (editingSight.coordinates) {
+        setSelectedCoordinates(editingSight.coordinates);
+      }
     }
   }, [editingSight]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target) &&
+        locationInputRef.current &&
+        !locationInputRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getCityFromTrip = () => {
+    if (!trip) return null;
+
+    if (trip.destination) {
+      return trip.destination.split(",")[0].trim();
+    }
+
+    if (trip.locationDetails?.formatted) {
+      return trip.locationDetails.formatted.split(",")[0].trim();
+    }
+
+    if (trip.locationDetails?.components?.city) {
+      return trip.locationDetails.components.city;
+    }
+
+    if (trip.location) {
+      return trip.location.split(",")[0].trim();
+    }
+
+    if (trip.name && trip.name.toLowerCase().includes(" to ")) {
+      const match = trip.name.match(/to\s+([^,]+)/i);
+      if (match) {
+        return match[1].trim();
+      }
+    }
+
+    return null;
+  };
+
+  const searchLocationSuggestions = async (query) => {
+    if (!query.trim() || query.length < 2) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    setIsSearchingLocations(true);
+
+    try {
+      const cityName = getCityFromTrip();
+
+      let apiUrl = `/api/places?query=${encodeURIComponent(query)}`;
+      if (cityName) {
+        apiUrl += `&city=${encodeURIComponent(cityName)}`;
+      }
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+      });
+
+      const data = await response.json();
+
+      if (data.results && data.results.length > 0) {
+        setLocationSuggestions(data.results);
+        setShowSuggestions(true);
+      } else {
+        setLocationSuggestions([]);
+      }
+    } catch (error) {
+      console.error("Error searching locations:", error);
+      setLocationSuggestions([]);
+    } finally {
+      setIsSearchingLocations(false);
+    }
+  };
+
+  const handleLocationChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      location: value,
+    }));
+
+    setSelectedCoordinates(null);
+
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      searchLocationSuggestions(value);
+    }, 300);
+
+    setSearchTimeout(timeout);
+  };
+
+  const handleSelectSuggestion = (suggestion) => {
+    setFormData((prev) => ({
+      ...prev,
+      location: suggestion.formatted,
+      name: prev.name || suggestion.name,
+    }));
+
+    setSelectedCoordinates({
+      lat: suggestion.geometry.lat,
+      lng: suggestion.geometry.lng,
+    });
+
+    setShowSuggestions(false);
+    setLocationSuggestions([]);
+    locationInputRef.current?.focus();
+  };
+
+  const formatSuggestionDisplay = (suggestion) => {
+    const { types } = suggestion;
+
+    let category = "Place";
+    let iconColor = "text-[var(--tw-focus)]";
+
+    if (types.includes("tourist_attraction")) {
+      category = "Tourist Attraction";
+      iconColor = "text-blue-500";
+    } else if (types.includes("museum")) {
+      category = "Museum";
+      iconColor = "text-purple-500";
+    } else if (types.includes("restaurant")) {
+      category = "Restaurant";
+      iconColor = "text-orange-500";
+    } else if (types.includes("lodging")) {
+      category = "Hotel";
+      iconColor = "text-green-500";
+    } else if (types.includes("park")) {
+      category = "Park";
+      iconColor = "text-green-600";
+    } else if (
+      types.includes("church") ||
+      types.includes("hindu_temple") ||
+      types.includes("mosque") ||
+      types.includes("synagogue")
+    ) {
+      category = "Religious Site";
+      iconColor = "text-yellow-600";
+    } else if (types.includes("shopping_mall") || types.includes("store")) {
+      category = "Shopping";
+      iconColor = "text-pink-500";
+    }
+
+    return {
+      primary: suggestion.name,
+      secondary: category,
+      rating: suggestion.rating,
+      iconColor,
+    };
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,46 +223,48 @@ export default function AddSightModal({ tripId, day, editingSight, onClose }) {
         order: editingSight ? editingSight.order : Date.now(),
       };
 
+      let finalCoordinates = selectedCoordinates;
+
+      if (!finalCoordinates && formData.location.trim()) {
+        const geocodedResult = await geocodeLocation(formData.location.trim());
+        if (geocodedResult) {
+          finalCoordinates = {
+            lat: geocodedResult.lat,
+            lng: geocodedResult.lng,
+          };
+        }
+      }
+
+      if (finalCoordinates) {
+        sightData.coordinates = finalCoordinates;
+      }
+
+      let updatedSight = null;
+
       if (editingSight) {
         await updateDoc(
           doc(db, "trips", tripId, "itineraryItems", editingSight.id),
           sightData
         );
 
-        if (!editingSight.coordinates && formData.location.trim()) {
-          const coordinates = await geocodeLocation(formData.location.trim());
-          if (coordinates) {
-            await updateDoc(
-              doc(db, "trips", tripId, "itineraryItems", editingSight.id),
-              {
-                coordinates: {
-                  lat: coordinates.lat,
-                  lng: coordinates.lng,
-                },
-              }
-            );
-          }
-        }
+        updatedSight = {
+          id: editingSight.id,
+          ...sightData,
+        };
       } else {
         const docRef = await addDoc(
           collection(db, "trips", tripId, "itineraryItems"),
           sightData
         );
 
-        if (formData.location.trim()) {
-          const coordinates = await geocodeLocation(formData.location.trim());
-          if (coordinates) {
-            await updateDoc(
-              doc(db, "trips", tripId, "itineraryItems", docRef.id),
-              {
-                coordinates: {
-                  lat: coordinates.lat,
-                  lng: coordinates.lng,
-                },
-              }
-            );
-          }
-        }
+        updatedSight = {
+          id: docRef.id,
+          ...sightData,
+        };
+      }
+
+      if (onSightAdded && updatedSight && updatedSight.coordinates) {
+        onSightAdded(updatedSight);
       }
 
       onClose();
@@ -101,6 +282,11 @@ export default function AddSightModal({ tripId, day, editingSight, onClose }) {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const getCityName = () => {
+    const city = getCityFromTrip();
+    return city || "your destination";
   };
 
   return (
@@ -140,21 +326,74 @@ export default function AddSightModal({ tripId, day, editingSight, onClose }) {
             />
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-[var(--tw-text)] mb-1">
               Location *
             </label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-[var(--tw-border)] rounded-lg bg-[var(--tw-field)] text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] focus:border-transparent"
-              placeholder="e.g., Champ de Mars, Paris, France"
-              disabled={isSubmitting}
-            />
+            <div className="relative">
+              <input
+                ref={locationInputRef}
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleLocationChange}
+                onFocus={() =>
+                  formData.location.length >= 2 && setShowSuggestions(true)
+                }
+                className="w-full px-3 py-2 border border-[var(--tw-border)] rounded-lg bg-[var(--tw-field)] text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] focus:border-transparent"
+                placeholder={`Search attractions in ${getCityName()}...`}
+                disabled={isSubmitting}
+                autoComplete="off"
+              />
+              {isSearchingLocations && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--tw-focus)]"></div>
+                </div>
+              )}
+            </div>
+
+            {showSuggestions && locationSuggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                className="absolute z-10 w-full mt-1 bg-[var(--tw-background)] border border-[var(--tw-border)] rounded-lg shadow-lg max-h-60 overflow-y-auto"
+              >
+                {locationSuggestions.map((suggestion, index) => {
+                  const display = formatSuggestionDisplay(suggestion);
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(suggestion)}
+                      className="w-full text-left px-3 py-2 hover:bg-[var(--tw-field)] transition-colors border-b border-[var(--tw-border)] last:border-b-0"
+                    >
+                      <div className="flex items-start gap-2">
+                        <MapPin
+                          className={`w-4 h-4 mt-0.5 flex-shrink-0 ${display.iconColor}`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-[var(--tw-text)] truncate">
+                            {display.primary}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-[var(--tw-text)] opacity-70">
+                              {display.secondary}
+                            </span>
+                            {display.rating && (
+                              <span className="text-sm text-yellow-500">
+                                ⭐ {display.rating}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             <p className="text-xs text-[var(--tw-text)] opacity-70 mt-1">
-              Be specific for accurate map placement
+              Search for attractions, restaurants, and places in {getCityName()}
             </p>
           </div>
 
