@@ -20,6 +20,16 @@ export default function TripMap({ mapPoints = [] }) {
       : [52.2297, 21.0122];
   const zoom = 13;
 
+  const formatDate = (date) => {
+    if (!date) return "";
+    const dateObj = date.toDate ? date.toDate() : new Date(date);
+    return dateObj.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   return (
     <div className="bg-[var(--tw-subbackground)] rounded-lg overflow-hidden">
       <div className="h-96 w-full">
@@ -39,11 +49,18 @@ export default function TripMap({ mapPoints = [] }) {
               position={[point.coordinates.lat, point.coordinates.lng]}
             >
               <Popup>
-                <div className="text-center">
-                  <h3 className="font-semibold text-sm">{point.name}</h3>
-                  <p className="text-xs text-gray-600">{point.location}</p>
+                <div className="text-center min-w-[200px]">
+                  <h3 className="font-bold text-base mb-1">{point.name}</h3>
+                  <p className="text-sm text-gray-600 mb-2">{point.location}</p>
+                  {point.day && (
+                    <p className="text-xs text-blue-600 font-medium mb-1">
+                      {formatDate(point.day)}
+                    </p>
+                  )}
                   {point.notes && (
-                    <p className="text-xs text-gray-500 mt-1">{point.notes}</p>
+                    <p className="text-xs text-gray-500 mt-2 border-t pt-2">
+                      {point.notes}
+                    </p>
                   )}
                 </div>
               </Popup>

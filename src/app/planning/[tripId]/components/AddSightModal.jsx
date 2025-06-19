@@ -1,16 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { X } from "lucide-react";
+import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { geocodeLocation } from "@/lib/geocoding";
 
 export default function AddSightModal({ tripId, day, editingSight, onClose }) {
   const [formData, setFormData] = useState({
@@ -28,18 +21,11 @@ export default function AddSightModal({ tripId, day, editingSight, onClose }) {
         location: editingSight.location || "",
         notes: editingSight.notes || "",
       });
-    } else {
-      setFormData({
-        name: "",
-        location: "",
-        notes: "",
-      });
     }
   }, [editingSight]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.name.trim() || !formData.location.trim()) {
       setError("Name and location are required");
       return;
@@ -49,33 +35,55 @@ export default function AddSightModal({ tripId, day, editingSight, onClose }) {
     setError("");
 
     try {
+      const sightData = {
+        name: formData.name.trim(),
+        location: formData.location.trim(),
+        notes: formData.notes.trim(),
+        day,
+        createdAt: new Date(),
+        order: editingSight ? editingSight.order : Date.now(),
+      };
+
       if (editingSight) {
         await updateDoc(
           doc(db, "trips", tripId, "itineraryItems", editingSight.id),
-          {
-            name: formData.name.trim(),
-            location: formData.location.trim(),
-            notes: formData.notes.trim(),
-            updatedAt: new Date(),
-          }
+          sightData
         );
-      } else {
-        const existingItemsQuery = query(
-          collection(db, "trips", tripId, "itineraryItems"),
-          where("day", "==", day)
-        );
-        const existingItems = await getDocs(existingItemsQuery);
-        const nextOrder = existingItems.size;
 
-        await addDoc(collection(db, "trips", tripId, "itineraryItems"), {
-          name: formData.name.trim(),
-          location: formData.location.trim(),
-          notes: formData.notes.trim(),
-          day: day,
-          order: nextOrder,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+        if (!editingSight.coordinates && formData.location.trim()) {
+          const coordinates = await geocodeLocation(formData.location.trim());
+          if (coordinates) {
+            await updateDoc(
+              doc(db, "trips", tripId, "itineraryItems", editingSight.id),
+              {
+                coordinates: {
+                  lat: coordinates.lat,
+                  lng: coordinates.lng,
+                },
+              }
+            );
+          }
+        }
+      } else {
+        const docRef = await addDoc(
+          collection(db, "trips", tripId, "itineraryItems"),
+          sightData
+        );
+
+        if (formData.location.trim()) {
+          const coordinates = await geocodeLocation(formData.location.trim());
+          if (coordinates) {
+            await updateDoc(
+              doc(db, "trips", tripId, "itineraryItems", docRef.id),
+              {
+                coordinates: {
+                  lat: coordinates.lat,
+                  lng: coordinates.lng,
+                },
+              }
+            );
+          }
+        }
       }
 
       onClose();
@@ -96,39 +104,44 @@ export default function AddSightModal({ tripId, day, editingSight, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black opacity-40 backdrop-blur-sm"></div>
-      <div className="relative bg-[var(--tw-subbackground)] rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl opacity-100">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-[var(--tw-text)]">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-[var(--tw-background)] rounded-lg w-full max-w-md">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--tw-border)]">
+          <h2 className="text-xl font-bold text-[var(--tw-text)]">
             {editingSight ? "Edit Sight" : "Add New Sight"}
-          </h3>
+          </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
+            className="p-1 rounded-lg hover:bg-[var(--tw-subbackground)] transition-colors"
           >
             <X className="w-5 h-5 text-[var(--tw-text)]" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           <div>
-            <label className="block text-sm font-medium text-[var(--tw-text)] mb-2">
-              Sight Name *
+            <label className="block text-sm font-medium text-[var(--tw-text)] mb-1">
+              Name *
             </label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full bg-[var(--tw-field)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)]"
+              className="w-full px-3 py-2 border border-[var(--tw-border)] rounded-lg bg-[var(--tw-field)] text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] focus:border-transparent"
               placeholder="e.g., Eiffel Tower"
-              required
+              disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--tw-text)] mb-2">
+            <label className="block text-sm font-medium text-[var(--tw-text)] mb-1">
               Location *
             </label>
             <input
@@ -136,46 +149,45 @@ export default function AddSightModal({ tripId, day, editingSight, onClose }) {
               name="location"
               value={formData.location}
               onChange={handleChange}
-              className="w-full bg-[var(--tw-field)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)]"
-              placeholder="e.g., Champ de Mars, Paris"
-              required
+              className="w-full px-3 py-2 border border-[var(--tw-border)] rounded-lg bg-[var(--tw-field)] text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] focus:border-transparent"
+              placeholder="e.g., Champ de Mars, Paris, France"
+              disabled={isSubmitting}
             />
+            <p className="text-xs text-[var(--tw-text)] opacity-70 mt-1">
+              Be specific for accurate map placement
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[var(--tw-text)] mb-2">
-              Notes (Optional)
+            <label className="block text-sm font-medium text-[var(--tw-text)] mb-1">
+              Notes
             </label>
             <textarea
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              className="w-full bg-[var(--tw-field)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] resize-none"
-              placeholder="Any additional notes..."
               rows={3}
+              className="w-full px-3 py-2 border border-[var(--tw-border)] rounded-lg bg-[var(--tw-field)] text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] focus:border-transparent resize-none"
+              placeholder="Additional notes or details..."
+              disabled={isSubmitting}
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
           <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="cursor-pointer flex-1 bg-[var(--tw-focus)] text-white py-2 px-4 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50"
-            >
-              {isSubmitting
-                ? "Saving..."
-                : editingSight
-                ? "Save Changes"
-                : "Add Sight"}
-            </button>
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer flex-1 bg-[var(--tw-field)] text-[var(--tw-text)] py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors"
+              className="flex-1 px-4 py-2 border border-[var(--tw-border)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-subbackground)] transition-colors"
+              disabled={isSubmitting}
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-[var(--tw-focus)] text-white rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Saving..." : editingSight ? "Update" : "Add"}
             </button>
           </div>
         </form>
