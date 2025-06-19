@@ -337,12 +337,12 @@ export default function TripPage() {
               <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
                 Trip Map
               </h2>
-              <TripMap mapPoints={mapPoints} />
+              <TripMap mapPoints={mapPoints} trip={trip} />
               {mapPoints.length === 0 && (
                 <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
                   <p className="text-[var(--tw-text)] opacity-70">
-                    No locations with coordinates found. Add coordinates to your
-                    sights to see them on the map.
+                    No locations with coordinates found. Add sights to your trip
+                    to see them on the map.
                   </p>
                 </div>
               )}

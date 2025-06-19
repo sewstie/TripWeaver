@@ -13,12 +13,24 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-export default function TripMap({ mapPoints = [] }) {
-  const center =
-    mapPoints.length > 0
-      ? [mapPoints[0].coordinates.lat, mapPoints[0].coordinates.lng]
-      : [52.2297, 21.0122];
-  const zoom = 13;
+export default function TripMap({ mapPoints = [], trip }) {
+  const getMapCenter = () => {
+    if (mapPoints.length > 0) {
+      return [mapPoints[0].coordinates.lat, mapPoints[0].coordinates.lng];
+    }
+
+    if (trip?.locationDetails?.geometry) {
+      return [
+        trip.locationDetails.geometry.lat,
+        trip.locationDetails.geometry.lng,
+      ];
+    }
+
+    return [52.2297, 21.0122];
+  };
+
+  const center = getMapCenter();
+  const zoom = mapPoints.length > 0 ? 13 : 11;
 
   const formatDate = (date) => {
     if (!date) return "";
