@@ -100,14 +100,14 @@ export default function SightCard({
                 <div className="flex gap-1">
                   <button
                     onClick={() => onEdit(sight)}
-                    className="p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
+                    className="cursor-pointer p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
                     disabled={isReordering}
                   >
                     <Edit className="w-4 h-4 text-[var(--tw-text)] opacity-60" />
                   </button>
                   <button
                     onClick={handleDeleteClick}
-                    className="p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
+                    className="cursor-pointer p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
                     disabled={isReordering}
                   >
                     <Trash2 className="w-4 h-4 text-red-500 opacity-60" />

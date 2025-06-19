@@ -285,8 +285,8 @@ export default function TripPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-[var(--tw-background)] pt-20 pb-8">
-        <div className="container mx-auto px-4 max-w-4xl">
+      <div className="min-h-screen bg-[var(--tw-background)]">
+        <div className="container mx-auto px-4 max-w-4xl pt-20 pb-8">
           <TripHeader
             trip={trip}
             onEdit={handleEditTrip}
@@ -295,10 +295,10 @@ export default function TripPage() {
           />
 
           <div className="mb-6">
-            <div className="flex bg-[var(--tw-field)] rounded-lg p-1 w-fit">
+            <div className="flex bg-[var(--tw-subbackground)] gap-1 rounded-lg p-1 w-fit">
               <button
                 onClick={() => setViewMode("schedule")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                   viewMode === "schedule"
                     ? "bg-[var(--tw-focus)] text-white"
                     : "text-[var(--tw-text)] hover:bg-[var(--tw-subbackground)]"
@@ -309,7 +309,7 @@ export default function TripPage() {
               </button>
               <button
                 onClick={() => setViewMode("map")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
                   viewMode === "map"
                     ? "bg-[var(--tw-focus)] text-white"
                     : "text-[var(--tw-text)] hover:bg-[var(--tw-subbackground)]"

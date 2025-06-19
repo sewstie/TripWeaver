@@ -16,14 +16,21 @@ export default function Confirmation({
 }) {
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
+      const scrollY = window.scrollY;
 
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflowY = "scroll";
+
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflowY = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -69,11 +76,12 @@ export default function Confirmation({
 
   return (
     <div
-      className="fixed inset-0 z-50 max-h-screen flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ height: "100vh", top: `${window.scrollY}px` }}
       onClick={handleBackdropClick}
     >
-      <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
-      <div className="relative bg-[var(--tw-subbackground)] rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+      <div className="fixed top-0 left-0 right-0 bottom-0 bg-black opacity-50 backdrop-blur-sm"></div>
+      <div className="relative bg-[var(--tw-subbackground)] rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl z-10">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3">
             <AlertTriangle className={`w-6 h-6 ${styles.icon}`} />

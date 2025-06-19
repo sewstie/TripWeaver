@@ -38,6 +38,23 @@ export default function ManageAccessModal({ trip, onClose }) {
     userName: "",
   });
 
+  useEffect(() => {
+    const scrollY = window.scrollY;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflowY = "scroll";
+
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflowY = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   const getDisplayName = (userData, userId) => {
     if (!userData) return null;
     const username = getUserName(userId);
@@ -286,9 +303,15 @@ export default function ManageAccessModal({ trip, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="fixed inset-0 bg-black opacity-40 backdrop-blur-sm"></div>
-        <div className="relative bg-[var(--tw-subbackground)] rounded-lg p-6 w-full max-w-lg mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{
+          height: "100vh",
+          top: `${window.scrollY}px`,
+        }}
+      >
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black opacity-50 backdrop-blur-sm"></div>
+        <div className="relative bg-[var(--tw-subbackground)] rounded-lg p-6 w-full max-w-lg shadow-2xl max-h-[80vh] overflow-y-auto z-10">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-[var(--tw-text)]">
               Manage Trip Access
@@ -364,7 +387,7 @@ export default function ManageAccessModal({ trip, onClose }) {
 
             {loadingCollaborators ? (
               <div className="flex justify-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--tw-focus)]"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--tw-focus]"></div>
               </div>
             ) : (
               <div className="space-y-3">

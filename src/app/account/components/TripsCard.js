@@ -112,18 +112,20 @@ export default function TripsCard({ trips, setTrips }) {
                     </h3>
                     <span>{trip.destination}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs">
-                    <span>{formatDate(trip.startDate)}</span>
-                    <span>-</span>
-                    <span>{formatDate(trip.endDate)}</span>
+                  <div className="flex justify-end gap-6">
+                    <div className="flex items-center gap-4 text-xs">
+                      <span>{formatDate(trip.startDate)}</span>
+                      <span>-</span>
+                      <span>{formatDate(trip.endDate)}</span>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteClick(e, trip.id, trip.name)}
+                      className="text-red-400 cursor-pointer p-1 transition-colors"
+                      title="Delete trip"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                  <button
-                    onClick={(e) => handleDeleteClick(e, trip.id, trip.name)}
-                    className="text-red-400 cursor-pointer p-1 transition-colors"
-                    title="Delete trip"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
               ))}
             </div>
@@ -133,7 +135,9 @@ export default function TripsCard({ trips, setTrips }) {
 
       <Confirmation
         isOpen={confirmDelete.isOpen}
-        onClose={() => setConfirmDelete({ isOpen: false, tripId: null, tripName: "" })}
+        onClose={() =>
+          setConfirmDelete({ isOpen: false, tripId: null, tripName: "" })
+        }
         onConfirm={confirmDeleteTrip}
         title="Delete Trip"
         message={`Are you sure you want to delete "${confirmDelete.tripName}"? This action cannot be undone.`}

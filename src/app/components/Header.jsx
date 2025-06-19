@@ -35,7 +35,7 @@ export default function Header() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 py-4"
+      className="absolute top-0 left-0 right-0 z-50 py-4"
       style={{ backgroundColor: "transparent" }}
     >
       <div className="container mx-auto px-6 flex justify-between items-center">

@@ -18,7 +18,7 @@ export default function AddSightModal({
     location: "",
     notes: "",
   });
-  const [selectedCoordinates, setSelectedCoordinates] = useState(null); // Add this state
+  const [selectedCoordinates, setSelectedCoordinates] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [locationSuggestions, setLocationSuggestions] = useState([]);
@@ -36,7 +36,6 @@ export default function AddSightModal({
         location: editingSight.location || "",
         notes: editingSight.notes || "",
       });
-      // Set coordinates if editing an existing sight
       if (editingSight.coordinates) {
         setSelectedCoordinates(editingSight.coordinates);
       }
@@ -289,16 +288,38 @@ export default function AddSightModal({
     return city || "your destination";
   };
 
+  useEffect(() => {
+    const scrollY = window.scrollY;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overflowY = "scroll"; // Keep scrollbar visible
+
+    return () => {
+      // Restore scroll position and normal behavior
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflowY = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--tw-background)] rounded-lg w-full max-w-md">
-        <div className="flex items-center justify-between p-4 border-b border-[var(--tw-border)]">
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ height: "100vh", top: `${window.scrollY}px` }}
+    >
+      <div className="fixed top-0 left-0 right-0 bottom-0 bg-black opacity-50 backdrop-blur-sm"></div>
+      <div className="bg-[var(--tw-background)] rounded-lg w-full max-w-md relative z-10">
+        <div className="flex items-center justify-between p-4">
           <h2 className="text-xl font-bold text-[var(--tw-text)]">
             {editingSight ? "Edit Sight" : "Add New Sight"}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-[var(--tw-subbackground)] transition-colors"
+            className="cursor-pointer p-1 rounded-lg hover:bg-[var(--tw-subbackground)] transition-colors"
           >
             <X className="w-5 h-5 text-[var(--tw-text)]" />
           </button>
@@ -320,7 +341,7 @@ export default function AddSightModal({
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[var(--tw-border)] rounded-lg bg-[var(--tw-field)] text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] focus:border-transparent"
+              className="w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)]"
               placeholder="e.g., Eiffel Tower"
               disabled={isSubmitting}
             />
@@ -340,7 +361,7 @@ export default function AddSightModal({
                 onFocus={() =>
                   formData.location.length >= 2 && setShowSuggestions(true)
                 }
-                className="w-full px-3 py-2 border border-[var(--tw-border)] rounded-lg bg-[var(--tw-field)] text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] focus:border-transparent"
+                className="w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)]"
                 placeholder={`Search attractions in ${getCityName()}...`}
                 disabled={isSubmitting}
                 autoComplete="off"
@@ -406,7 +427,7 @@ export default function AddSightModal({
               value={formData.notes}
               onChange={handleChange}
               rows={3}
-              className="w-full px-3 py-2 border border-[var(--tw-border)] rounded-lg bg-[var(--tw-field)] text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] focus:border-transparent resize-none"
+              className="w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)] resize-none"
               placeholder="Additional notes or details..."
               disabled={isSubmitting}
             />
@@ -416,20 +437,27 @@ export default function AddSightModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-[var(--tw-border)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-subbackground)] transition-colors"
+              className="cursor-pointer flex-1 px-4 py-2 border border-[var(--tw-focus)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-subbackground)] transition-colors"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-[var(--tw-focus)] text-white rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cursor-pointer flex-1 px-4 py-2 bg-[var(--tw-focus)] text-white rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Saving..." : editingSight ? "Update" : "Add"}
             </button>
           </div>
         </form>
+
+        <style jsx>{`
+          .placeholder-custom::placeholder {
+            color: var(--tw-text);
+            opacity: 0.6;
+          }
+        `}</style>
       </div>
     </div>
   );
