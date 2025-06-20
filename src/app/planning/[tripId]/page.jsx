@@ -216,7 +216,7 @@ export default function TripPage() {
 
     try {
       await deleteDoc(doc(db, "trips", tripId));
-      router.push("/trips");
+      router.push("/account");
     } catch (error) {
       console.error("Error deleting trip:", error);
       setErrorModal({

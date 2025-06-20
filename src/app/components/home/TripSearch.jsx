@@ -6,15 +6,7 @@ import { Button } from "@/app/components/ui/button";
 import { CalendarIcon, MapPin, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  db,
-  collection,
-  addDoc,
-  serverTimestamp,
-  query,
-  orderBy,
-  getDocs,
-} from "@/lib/firebase";
+import { db, collection, addDoc, serverTimestamp } from "@/lib/firebase";
 
 export default function TripSearch() {
   const [searchData, setSearchData] = useState({
@@ -25,6 +17,7 @@ export default function TripSearch() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
   const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState({});
 
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
@@ -79,6 +72,35 @@ export default function TripSearch() {
     }
   }, [searchData.startDate]);
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!selectedLocation || !searchData.destination.trim()) {
+      errors.destination = "Please select a destination city";
+    }
+
+    if (!searchData.startDate) {
+      errors.startDate = "Please select a start date";
+    }
+
+    if (!searchData.endDate) {
+      errors.endDate = "Please select an end date";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearValidationError = (field) => {
+    if (validationErrors[field]) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSearchData((prevData) => ({
@@ -87,6 +109,7 @@ export default function TripSearch() {
     }));
 
     if (name === "destination") {
+      clearValidationError("destination");
       handleDestinationSearch(value);
     }
   };
@@ -109,21 +132,22 @@ export default function TripSearch() {
             query
           )}&key=${
             process.env.NEXT_PUBLIC_OPENCAGE_API_KEY
-          }&limit=5&no_annotations=1&language=en`
+          }&limit=8&no_annotations=1&language=en&roadinfo=0&address_only=1`
         );
         const data = await response.json();
         if (data.results && data.results.length > 0) {
-          const filteredResults = data.results.filter(
+          const cityResults = data.results.filter(
             (result) =>
-              result.components.city ||
-              result.components.town ||
-              result.components.state ||
-              result.components.country
+              (result.components.city ||
+                result.components.town ||
+                result.components.village) &&
+              result.components.country &&
+              !result.components.road &&
+              !result.components.house_number &&
+              !result.components.postcode_only
           );
 
-          setSearchResults(
-            filteredResults.length > 0 ? filteredResults : data.results
-          );
+          setSearchResults(cityResults);
         } else {
           setSearchResults([]);
         }
@@ -141,6 +165,7 @@ export default function TripSearch() {
     setSelectedLocation(location);
     setSearchData((prev) => ({ ...prev, destination: location.formatted }));
     setSearchResults([]);
+    clearValidationError("destination");
   };
 
   const formatLocationName = (location) => {
@@ -182,17 +207,14 @@ export default function TripSearch() {
       ...prevData,
       [field]: date,
     }));
+    clearValidationError(field);
   };
 
   const createTrip = async () => {
-    if (!selectedLocation) {
-      setError("Please select a destination");
+    if (!validateForm()) {
       return;
     }
-    if (!searchData.startDate || !searchData.endDate) {
-      setError("Please select both start and end dates");
-      return;
-    }
+
     if (!currentUser) {
       router.push("/login");
       return;
@@ -289,13 +311,21 @@ export default function TripSearch() {
                 type="text"
                 id="destination"
                 name="destination"
-                placeholder="Search cities, places, landmarks..."
+                placeholder="Search cities..."
                 value={searchData.destination}
                 onChange={handleChange}
-                className="w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)]"
+                className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 placeholder-custom bg-[var(--tw-field)] border text-[var(--tw-text)] ${
+                  validationErrors.destination
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-[var(--tw-border)] focus:border-[var(--tw-text)]"
+                }`}
                 autoComplete="off"
-                required
               />
+              {validationErrors.destination && (
+                <p className="text-red-500 text-sm mt-1">
+                  {validationErrors.destination}
+                </p>
+              )}
               {isSearching && (
                 <div className="absolute right-3 top-9">
                   <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-7" />
@@ -346,7 +376,11 @@ export default function TripSearch() {
                   ref={startDateBtnRef}
                   type="button"
                   variant="outline"
-                  className="w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)] hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)]"
+                  className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
+                    validationErrors.startDate
+                      ? "border-red-500"
+                      : "border-[var(--tw-border)] text-[var(--tw-text)]"
+                  }`}
                   onClick={() => {
                     setStartDateOpen(!startDateOpen);
                     setEndDateOpen(false);
@@ -359,6 +393,11 @@ export default function TripSearch() {
                     <span>Select start date</span>
                   )}
                 </Button>
+                {validationErrors.startDate && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {validationErrors.startDate}
+                  </p>
+                )}
 
                 {startDateOpen && (
                   <div
@@ -389,7 +428,11 @@ export default function TripSearch() {
                   ref={endDateBtnRef}
                   type="button"
                   variant="outline"
-                  className="w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)] hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)]"
+                  className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
+                    validationErrors.endDate
+                      ? "border-red-500"
+                      : "border-[var(--tw-border)] text-[var(--tw-text)]"
+                  }`}
                   onClick={() => {
                     setEndDateOpen(!endDateOpen);
                     setStartDateOpen(false);
@@ -402,6 +445,11 @@ export default function TripSearch() {
                     <span>Select end date</span>
                   )}
                 </Button>
+                {validationErrors.endDate && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {validationErrors.endDate}
+                  </p>
+                )}
 
                 {endDateOpen && (
                   <div
