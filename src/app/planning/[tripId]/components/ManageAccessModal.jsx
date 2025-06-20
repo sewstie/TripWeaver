@@ -333,7 +333,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter email address..."
-                    className="w-full bg-[var(--tw-field)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] placeholder-gray-400"
+                    className="w-full px-3 py-2 rounded-lg focus:outline-none focus:border-1.5 placeholder-custom bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)]"
                     required
                   />
                 </div>
@@ -341,7 +341,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
-                    className="bg-[var(--tw-field)] border border-[var(--tw-field)] rounded-lg px-3 py-2 text-[var(--tw-text)] focus:outline-none focus:ring-2 focus:ring-[var(--tw-focus)] appearance-none pr-8"
+                    className=" px-3 py-2 appearance-none pr-8 rounded-lg focus:outline-none focus:border-1.5 placeholder-custom bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)]"
                   >
                     <option value="editor">Editor</option>
                     <option value="viewer">Viewer</option>
@@ -429,7 +429,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                                   e.target.value
                                 )
                               }
-                              className="bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded px-2 py-1 text-sm text-[var(--tw-text)] focus:outline-none focus:ring-1 focus:ring-[var(--tw-focus)] appearance-none pr-6"
+                              className="px-2 py-1 text-sm appearance-none pr-6 rounded-lg focus:outline-none focus:border-1.5 placeholder-custom bg-[var(--tw-subbackground)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)]"
                             >
                               <option value="editor">Editor</option>
                               <option value="viewer">Viewer</option>

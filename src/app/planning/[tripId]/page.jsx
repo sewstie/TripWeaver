@@ -8,6 +8,7 @@ import {
   collection,
   query,
   onSnapshot,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
@@ -34,6 +35,7 @@ export default function TripPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [viewMode, setViewMode] = useState("schedule");
   const [mapPoints, setMapPoints] = useState([]);
+  const [selectedMapDay, setSelectedMapDay] = useState(0);
   const [errorModal, setErrorModal] = useState({
     isOpen: false,
     message: "",
@@ -125,7 +127,10 @@ export default function TripPage() {
   useEffect(() => {
     if (!tripId) return;
 
-    const q = query(collection(db, "trips", tripId, "itineraryItems"));
+    const q = query(
+      collection(db, "trips", tripId, "itineraryItems"),
+      orderBy("createdAt", "asc")
+    );
 
     const unsubscribe = onSnapshot(
       q,
@@ -133,7 +138,7 @@ export default function TripPage() {
         const items = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          if (data.coordinates) {
+          if (data.coordinates && data.coordinates.lat && data.coordinates.lng) {
             items.push({
               id: doc.id,
               name: data.name,
@@ -169,10 +174,12 @@ export default function TripPage() {
     let dayNumber = 1;
 
     while (currentDate <= end) {
+      const dateString = currentDate.toISOString().split("T")[0];
       days.push({
         dayNumber,
         date: new Date(currentDate),
-        dateString: currentDate.toLocaleDateString("en-US", {
+        dateString,
+        displayDate: currentDate.toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
           month: "long",
@@ -225,6 +232,10 @@ export default function TripPage() {
       });
       setIsDeleting(false);
     }
+  };
+
+  const handleMapDayChange = (dayIndex) => {
+    setSelectedMapDay(dayIndex);
   };
 
   const userRole = trip?.collaborators?.[currentUser?.uid];
@@ -348,18 +359,13 @@ export default function TripPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-                Trip Map
-              </h2>
-              <TripMap mapPoints={mapPoints} trip={trip} />
-              {mapPoints.length === 0 && (
-                <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
-                  <p className="text-[var(--tw-text)] opacity-70">
-                    No locations with coordinates found. Add sights to your trip
-                    to see them on the map.
-                  </p>
-                </div>
-              )}
+              <TripMap 
+                mapPoints={mapPoints} 
+                trip={trip}
+                selectedDay={selectedMapDay}
+                onDayChange={handleMapDayChange}
+                availableDays={days}
+              />
             </div>
           )}
 
