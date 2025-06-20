@@ -38,6 +38,33 @@ export default function TripMap({ mapPoints, trip }) {
     loadLeaflet();
   }, []);
 
+  const getMapCenter = () => {
+    if (trip?.locationDetails?.geometry) {
+      return [
+        trip.locationDetails.geometry.lat,
+        trip.locationDetails.geometry.lng,
+      ];
+    }
+
+    if (mapPoints.length > 0) {
+      return [mapPoints[0].coordinates.lat, mapPoints[0].coordinates.lng];
+    }
+
+    return [20, 0];
+  };
+
+  const getMapZoom = () => {
+    if (trip?.locationDetails?.geometry) {
+      return 12;
+    }
+
+    if (mapPoints.length > 0) {
+      return 12;
+    }
+
+    return 2;
+  };
+
   if (!isClient || !leafletLoaded) {
     return (
       <div className="h-96 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
@@ -49,15 +76,14 @@ export default function TripMap({ mapPoints, trip }) {
     );
   }
 
+  const mapCenter = getMapCenter();
+  const mapZoom = getMapZoom();
+
   return (
     <div className="h-96 w-full rounded-lg overflow-hidden border border-[var(--tw-border)]">
       <MapContainer
-        center={
-          mapPoints.length > 0
-            ? [mapPoints[0].coordinates.lat, mapPoints[0].coordinates.lng]
-            : [20, 0]
-        }
-        zoom={mapPoints.length > 0 ? 12 : 2}
+        center={mapCenter}
+        zoom={mapZoom}
         style={{ height: "100%", width: "100%" }}
         className="z-0"
         zoomControl={true}
