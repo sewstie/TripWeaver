@@ -294,10 +294,9 @@ export default function AddSightModal({
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = "100%";
-    document.body.style.overflowY = "scroll"; // Keep scrollbar visible
+    document.body.style.overflowY = "scroll";
 
     return () => {
-      // Restore scroll position and normal behavior
       document.body.style.position = "";
       document.body.style.top = "";
       document.body.style.width = "";
