@@ -9,41 +9,39 @@ import { useAuth } from "@/lib/AuthContext";
 import { db, collection, addDoc, serverTimestamp } from "@/lib/firebase";
 
 export default function TripSearch() {
+  const [tripType, setTripType] = useState("simple");
   const [searchData, setSearchData] = useState({
     destination: "",
     startDate: undefined,
     endDate: undefined,
-    tripType: "simple",
-    arrivalCity: "",
-    departureCity: "",
-    cities: [],
+  });
+  const [advancedTripData, setAdvancedTripData] = useState({
+    arrivalCity: null,
+    departureCity: null,
+    startDate: undefined,
+    endDate: undefined,
   });
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const [selectedArrivalLocation, setSelectedArrivalLocation] = useState(null);
-  const [selectedDepartureLocation, setSelectedDepartureLocation] =
-    useState(null);
-  const [selectedCities, setSelectedCities] = useState([]);
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
-
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
-
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState(null);
-  const [citySearchResults, setCitySearchResults] = useState([]);
-  const [isSearchingCities, setIsSearchingCities] = useState(false);
-  const [transportSearchResults, setTransportSearchResults] = useState([]);
-  const [currentSearchType, setCurrentSearchType] = useState("");
-  const searchResultsRef = useRef(null);
+  const [activeSearchField, setActiveSearchField] = useState(null);
+  const [arrivalCityInput, setArrivalCityInput] = useState("");
+  const [departureCityInput, setDepartureCityInput] = useState("");
 
+  const searchResultsRef = useRef(null);
   const startDateBtnRef = useRef(null);
   const endDateBtnRef = useRef(null);
   const startCalendarRef = useRef(null);
   const endCalendarRef = useRef(null);
   const destinationInputRef = useRef(null);
+  const arrivalCityInputRef = useRef(null);
+  const departureCityInputRef = useRef(null);
 
   const { currentUser } = useAuth();
   const router = useRouter();
@@ -64,14 +62,13 @@ export default function TripSearch() {
 
       if (
         !destinationInputRef.current?.contains(e.target) &&
+        !arrivalCityInputRef.current?.contains(e.target) &&
+        !departureCityInputRef.current?.contains(e.target) &&
         !searchResultsRef.current?.contains(e.target)
       ) {
         setSearchResults([]);
+        setActiveSearchField(null);
       }
-
-      // Clear city search results when clicking outside
-      setCitySearchResults([]);
-      setCurrentSearchType("");
     };
 
     document.addEventListener("mousedown", handleOutsideClick);
@@ -79,165 +76,52 @@ export default function TripSearch() {
   }, []);
 
   useEffect(() => {
+    const currentData = tripType === "simple" ? searchData : advancedTripData;
     if (
-      searchData.startDate &&
-      searchData.endDate &&
-      searchData.endDate < searchData.startDate
+      currentData.startDate &&
+      currentData.endDate &&
+      currentData.endDate < currentData.startDate
     ) {
-      setSearchData((prev) => ({ ...prev, endDate: searchData.startDate }));
-    }
-  }, [searchData.startDate]);
-
-  const handleTripTypeChange = (type) => {
-    setSearchData((prev) => ({
-      ...prev,
-      tripType: type,
-      arrivalCity: type === "simple" ? "" : prev.arrivalCity,
-      departureCity: type === "simple" ? "" : prev.departureCity,
-      cities: type === "simple" ? [] : prev.cities,
-    }));
-
-    if (type === "simple") {
-      setSelectedCities([]);
-      setSelectedArrivalLocation(null);
-      setSelectedDepartureLocation(null);
-    }
-  };
-
-  const handleCitySearch = async (query, type = "cities") => {
-    if (query.length < 2) {
-      setCitySearchResults([]);
-      setCurrentSearchType("");
-      return;
-    }
-
-    setCurrentSearchType(type);
-    setIsSearchingCities(true);
-
-    try {
-      const response = await fetch(
-        `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
-          query
-        )}&key=${
-          process.env.NEXT_PUBLIC_OPENCAGE_API_KEY
-        }&limit=10&no_annotations=1&language=en&roadinfo=0&address_only=1`
-      );
-      const data = await response.json();
-      if (data.results && data.results.length > 0) {
-        const cityResults = data.results.filter(
-          (result) =>
-            (result.components.city ||
-              result.components.town ||
-              result.components.village ||
-              result.components.county ||
-              result.components.state) &&
-            result.components.country &&
-            !result.components.road &&
-            !result.components.house_number &&
-            !result.components.postcode_only
-        );
-        setCitySearchResults(cityResults);
+      if (tripType === "simple") {
+        setSearchData((prev) => ({ ...prev, endDate: currentData.startDate }));
       } else {
-        setCitySearchResults([]);
+        setAdvancedTripData((prev) => ({
+          ...prev,
+          endDate: currentData.startDate,
+        }));
       }
-    } catch (error) {
-      console.error("Error searching cities:", error);
-      setCitySearchResults([]);
     }
-    setIsSearchingCities(false);
-  };
-
-  const handleAddCity = (city) => {
-    const cityData = {
-      id: Date.now(),
-      name: city.formatted,
-      coordinates: {
-        lat: city.geometry.lat,
-        lng: city.geometry.lng,
-      },
-    };
-
-    setSelectedCities((prev) => [...prev, cityData]);
-    setSearchData((prev) => ({
-      ...prev,
-      cities: [...prev.cities, cityData],
-    }));
-    setCitySearchResults([]);
-  };
-
-  const handleRemoveCity = (cityId) => {
-    setSelectedCities((prev) => prev.filter((city) => city.id !== cityId));
-    setSearchData((prev) => ({
-      ...prev,
-      cities: prev.cities.filter((city) => city.id !== cityId),
-    }));
-  };
-
-  const handleTransportSearch = async (query, type) => {
-    if (query.length < 3) {
-      setTransportSearchResults([]);
-      return;
-    }
-
-    setCurrentSearchType(type);
-    setIsSearchingCities(true);
-
-    try {
-      const response = await fetch(
-        `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
-          query + " airport OR train station OR bus station"
-        )}&key=${
-          process.env.NEXT_PUBLIC_OPENCAGE_API_KEY
-        }&limit=8&no_annotations=1&language=en`
-      );
-      const data = await response.json();
-      if (data.results && data.results.length > 0) {
-        const transportResults = data.results.filter(
-          (result) =>
-            result.formatted.toLowerCase().includes("airport") ||
-            result.formatted.toLowerCase().includes("train") ||
-            result.formatted.toLowerCase().includes("bus") ||
-            result.formatted.toLowerCase().includes("station") ||
-            result.formatted.toLowerCase().includes("terminal") ||
-            result.components._type === "aeroway"
-        );
-        setTransportSearchResults(
-          transportResults.length > 0
-            ? transportResults
-            : data.results.slice(0, 5)
-        );
-      } else {
-        setTransportSearchResults([]);
-      }
-    } catch (error) {
-      console.error("Error searching transport hubs:", error);
-      setTransportSearchResults([]);
-    }
-    setIsSearchingCities(false);
-  };
+  }, [
+    tripType === "simple" ? searchData.startDate : advancedTripData.startDate,
+    tripType,
+  ]);
 
   const validateForm = () => {
     const errors = {};
 
-    if (searchData.tripType === "simple") {
+    if (tripType === "simple") {
       if (!selectedLocation || !searchData.destination.trim()) {
         errors.destination = "Please select a destination city";
       }
+      if (!searchData.startDate) {
+        errors.startDate = "Please select a start date";
+      }
+      if (!searchData.endDate) {
+        errors.endDate = "Please select an end date";
+      }
     } else {
-      if (!searchData.arrivalCity.trim()) {
-        errors.arrivalCity = "Arrival point is required";
+      if (!advancedTripData.arrivalCity) {
+        errors.arrivalCity = "Please select an arrival city";
       }
-      if (!searchData.departureCity.trim()) {
-        errors.departureCity = "Departure point is required";
+      if (!advancedTripData.departureCity) {
+        errors.departureCity = "Please select a departure city";
       }
-    }
-
-    if (!searchData.startDate) {
-      errors.startDate = "Please select a start date";
-    }
-
-    if (!searchData.endDate) {
-      errors.endDate = "Please select an end date";
+      if (!advancedTripData.startDate) {
+        errors.startDate = "Please select a start date";
+      }
+      if (!advancedTripData.endDate) {
+        errors.endDate = "Please select an end date";
+      }
     }
 
     setValidationErrors(errors);
@@ -263,19 +147,34 @@ export default function TripSearch() {
 
     if (name === "destination") {
       clearValidationError("destination");
-      handleDestinationSearch(value);
+      handleDestinationSearch(value, "destination");
     }
   };
 
-  const handleDestinationSearch = (query) => {
+  const handleAdvancedInputChange = (field, value) => {
+    clearValidationError(field);
+
+    if (field === "arrivalCity") {
+      setArrivalCityInput(value);
+    } else if (field === "departureCity") {
+      setDepartureCityInput(value);
+    }
+
+    handleDestinationSearch(value, field);
+  };
+
+  const handleDestinationSearch = (query, fieldType = "destination") => {
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
 
     if (query.length < 2) {
       setSearchResults([]);
+      setActiveSearchField(null);
       return;
     }
+
+    setActiveSearchField(fieldType);
 
     const timeout = setTimeout(async () => {
       setIsSearching(true);
@@ -315,10 +214,24 @@ export default function TripSearch() {
   };
 
   const handleSelectLocation = (location) => {
-    setSelectedLocation(location);
-    setSearchData((prev) => ({ ...prev, destination: location.formatted }));
+    if (tripType === "simple") {
+      setSelectedLocation(location);
+      setSearchData((prev) => ({ ...prev, destination: location.formatted }));
+      clearValidationError("destination");
+    } else {
+      if (activeSearchField === "arrivalCity") {
+        setAdvancedTripData((prev) => ({ ...prev, arrivalCity: location }));
+        setArrivalCityInput(location.formatted);
+        clearValidationError("arrivalCity");
+      } else if (activeSearchField === "departureCity") {
+        setAdvancedTripData((prev) => ({ ...prev, departureCity: location }));
+        setDepartureCityInput(location.formatted);
+        clearValidationError("departureCity");
+      }
+    }
+
     setSearchResults([]);
-    clearValidationError("destination");
+    setActiveSearchField(null);
   };
 
   const formatLocationName = (location) => {
@@ -356,10 +269,17 @@ export default function TripSearch() {
   };
 
   const handleDateChange = (field, date) => {
-    setSearchData((prevData) => ({
-      ...prevData,
-      [field]: date,
-    }));
+    if (tripType === "simple") {
+      setSearchData((prevData) => ({
+        ...prevData,
+        [field]: date,
+      }));
+    } else {
+      setAdvancedTripData((prevData) => ({
+        ...prevData,
+        [field]: date,
+      }));
+    }
     clearValidationError(field);
   };
 
@@ -377,59 +297,92 @@ export default function TripSearch() {
     setError("");
 
     try {
-      const tripData = {
-        name:
-          searchData.tripType === "simple"
-            ? `Trip to ${
-                selectedLocation?.components?.city ||
-                selectedLocation?.components?.town ||
-                selectedLocation?.formatted
-              }`
-            : `Multi-City Trip`,
-        destination: searchData.destination,
-        startDate: searchData.startDate,
-        endDate: searchData.endDate,
-        createdBy: currentUser.uid,
-        ownerId: currentUser.uid,
-        collaborators: {
-          [currentUser.uid]: "owner",
-        },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        itinerary: [],
-        budget: {
-          total: 0,
-          accommodation: 0,
-          transportation: 0,
-          activities: 0,
-          food: 0,
-          other: 0,
-        },
-        tripType: searchData.tripType,
-      };
+      let newTrip;
 
-      if (searchData.tripType === "simple") {
-        tripData.locationDetails = {
-          ...selectedLocation,
-          geometry: {
-            lat: selectedLocation.geometry?.lat || 0,
-            lng: selectedLocation.geometry?.lng || 0,
+      if (tripType === "simple") {
+        newTrip = {
+          type: "simple",
+          name: `Trip to ${
+            selectedLocation.components?.city ||
+            selectedLocation.components?.town ||
+            selectedLocation.formatted
+          }`,
+          destination: selectedLocation.formatted,
+          locationDetails: {
+            ...selectedLocation,
+            geometry: {
+              lat: selectedLocation.geometry?.lat || 0,
+              lng: selectedLocation.geometry?.lng || 0,
+            },
+          },
+          startDate: searchData.startDate,
+          endDate: searchData.endDate,
+          createdBy: currentUser.uid,
+          ownerId: currentUser.uid,
+          collaborators: {
+            [currentUser.uid]: "owner",
+          },
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          itinerary: [],
+          budget: {
+            total: 0,
+            accommodation: 0,
+            transportation: 0,
+            activities: 0,
+            food: 0,
+            other: 0,
           },
         };
       } else {
-        tripData.arrivalPoint = {
-          name: searchData.arrivalCity,
-          details: selectedArrivalLocation,
+        const arrivalCityName =
+          advancedTripData.arrivalCity.components?.city ||
+          advancedTripData.arrivalCity.components?.town ||
+          advancedTripData.arrivalCity.formatted.split(",")[0];
+        const departureCityName =
+          advancedTripData.departureCity.components?.city ||
+          advancedTripData.departureCity.components?.town ||
+          advancedTripData.departureCity.formatted.split(",")[0];
+
+        newTrip = {
+          type: "advanced",
+          name: `Trip from ${arrivalCityName} to ${departureCityName}`,
+          arrivalCity: {
+            ...advancedTripData.arrivalCity,
+            geometry: {
+              lat: advancedTripData.arrivalCity.geometry?.lat || 0,
+              lng: advancedTripData.arrivalCity.geometry?.lng || 0,
+            },
+          },
+          departureCity: {
+            ...advancedTripData.departureCity,
+            geometry: {
+              lat: advancedTripData.departureCity.geometry?.lat || 0,
+              lng: advancedTripData.departureCity.geometry?.lng || 0,
+            },
+          },
+          startDate: advancedTripData.startDate,
+          endDate: advancedTripData.endDate,
+          createdBy: currentUser.uid,
+          ownerId: currentUser.uid,
+          collaborators: {
+            [currentUser.uid]: "owner",
+          },
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          itinerary: [],
+          budget: {
+            total: 0,
+            accommodation: 0,
+            transportation: 0,
+            activities: 0,
+            food: 0,
+            other: 0,
+          },
         };
-        tripData.departurePoint = {
-          name: searchData.departureCity,
-          details: selectedDepartureLocation,
-        };
-        tripData.isMultiCity = true;
-        tripData.cities = [];
       }
 
-      const docRef = await addDoc(collection(db, "trips"), tripData);
+      const docRef = await addDoc(collection(db, "trips"), newTrip);
       router.push(`/planning/${docRef.id}`);
     } catch (error) {
       console.error("Error creating trip:", error);
@@ -442,6 +395,35 @@ export default function TripSearch() {
   const handleSubmit = (e) => {
     e.preventDefault();
     createTrip();
+  };
+
+  const currentData = tripType === "simple" ? searchData : advancedTripData;
+
+  const getDropdownPosition = () => {
+    let activeInputRef;
+
+    if (activeSearchField === "destination") {
+      activeInputRef = destinationInputRef;
+    } else if (activeSearchField === "arrivalCity") {
+      activeInputRef = arrivalCityInputRef;
+    } else if (activeSearchField === "departureCity") {
+      activeInputRef = departureCityInputRef;
+    }
+
+    if (activeInputRef?.current) {
+      const rect = activeInputRef.current.getBoundingClientRect();
+      const formRect = activeInputRef.current
+        .closest("form")
+        .getBoundingClientRect();
+
+      return {
+        top: rect.bottom - formRect.top + 5,
+        left: rect.left - formRect.left,
+        width: rect.width,
+      };
+    }
+
+    return { top: 120, left: 0, width: 300 };
   };
 
   return (
@@ -463,44 +445,40 @@ export default function TripSearch() {
           </p>
         </div>
 
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="flex justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => setTripType("simple")}
+              className={`cursor-pointer px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                tripType === "simple"
+                  ? "bg-[var(--tw-focus)] text-white"
+                  : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] hover:bg-opacity-80"
+              }`}
+            >
+              Single City
+            </button>
+            <button
+              type="button"
+              onClick={() => setTripType("advanced")}
+              className={`cursor-pointer px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                tripType === "advanced"
+                  ? "bg-[var(--tw-focus)] text-white"
+                  : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] hover:bg-opacity-80"
+              }`}
+            >
+              Advanced Trip
+            </button>
+          </div>
+        </div>
+
         <form
           onSubmit={handleSubmit}
-          className="max-w-4xl mx-auto bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm rounded-xl p-6 md:p-8 shadow-xl relative"
-          style={{ zIndex: 5 }}
+          className="max-w-4xl mx-auto bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm rounded-xl p-6 md:p-8 shadow-xl relative z-5"
         >
-          <div className="flex flex-col gap-6 mb-6">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-[var(--tw-text)]">
-                Trip Type
-              </label>
-              <div className="flex rounded-lg border border-[var(--tw-border)] p-1">
-                <button
-                  type="button"
-                  onClick={() => handleTripTypeChange("simple")}
-                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    searchData.tripType === "simple"
-                      ? "bg-[var(--tw-focus)] text-white"
-                      : "text-[var(--tw-text)] hover:bg-[var(--tw-field)]"
-                  }`}
-                >
-                  Single City
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTripTypeChange("multi-city")}
-                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    searchData.tripType === "multi-city"
-                      ? "bg-[var(--tw-focus)] text-white"
-                      : "text-[var(--tw-text)] hover:bg-[var(--tw-field)]"
-                  }`}
-                >
-                  Multi-City
-                </button>
-              </div>
-            </div>
-
-            {searchData.tripType === "simple" ? (
-              <div className="w-full">
+          {tripType === "simple" ? (
+            <div className="flex flex-col gap-6 mb-6">
+              <div className="w-full relative">
                 <label
                   htmlFor="destination"
                   className="block mb-2 font-medium text-[var(--tw-text)]"
@@ -515,11 +493,17 @@ export default function TripSearch() {
                   placeholder="Search cities..."
                   value={searchData.destination}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 placeholder-custom bg-[var(--tw-field)] border text-[var(--tw-text)] ${
+                  className={`w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] placeholder-opacity-60 ${
                     validationErrors.destination
                       ? "border-red-500 focus:border-red-500"
                       : "border-[var(--tw-border)] focus:border-[var(--tw-text)]"
                   }`}
+                  style={{
+                    "::placeholder": {
+                      color: "var(--tw-text)",
+                      opacity: 0.6,
+                    },
+                  }}
                   autoComplete="off"
                 />
                 {validationErrors.destination && (
@@ -527,358 +511,359 @@ export default function TripSearch() {
                     {validationErrors.destination}
                   </p>
                 )}
-                {isSearching && (
+                {isSearching && activeSearchField === "destination" && (
                   <div className="absolute right-3 top-9">
-                    <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-7" />
-                  </div>
-                )}
-
-                {searchResults.length > 0 && (
-                  <div
-                    ref={searchResultsRef}
-                    className="absolute z-50 mt-1 w-[85%] max-w-md bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg max-h-60 overflow-y-auto"
-                  >
-                    {searchResults.map((result, index) => (
-                      <div
-                        key={index}
-                        className="p-3 hover:bg-[var(--tw-subbackground)] hover:bg-opacity-30 cursor-pointer border-b border-[var(--tw-border)] last:border-0 flex items-start"
-                        onClick={() => handleSelectLocation(result)}
-                      >
-                        <MapPin className="h-5 w-5 mr-2 flex-shrink-0 text-[var(--tw-focus)]" />
-                        <div>
-                          <p className="font-medium text-[var(--tw-text)]">
-                            {formatLocationName(result)}
-                          </p>
-                          <p className="text-sm text-[var(--tw-text)] opacity-70">
-                            {result.formatted}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                    <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-70" />
                   </div>
                 )}
               </div>
-            ) : (
-              <>
-                <div className="w-full relative">
+
+              <div className="flex flex-wrap gap-6">
+                <div className="flex-1 min-w-[200px] relative">
                   <label
-                    htmlFor="arrivalCity"
+                    htmlFor="startDate"
                     className="block mb-2 font-medium text-[var(--tw-text)]"
                   >
+                    Start Date
+                  </label>
+                  <Button
+                    ref={startDateBtnRef}
+                    type="button"
+                    variant="outline"
+                    className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
+                      validationErrors.startDate
+                        ? "border-red-500"
+                        : "border-[var(--tw-border)] text-[var(--tw-text)]"
+                    }`}
+                    onClick={() => {
+                      setStartDateOpen(!startDateOpen);
+                      setEndDateOpen(false);
+                    }}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {currentData.startDate ? (
+                      format(currentData.startDate, "PPP")
+                    ) : (
+                      <span>Select start date</span>
+                    )}
+                  </Button>
+                  {validationErrors.startDate && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {validationErrors.startDate}
+                    </p>
+                  )}
+
+                  {startDateOpen && (
+                    <div
+                      ref={startCalendarRef}
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={currentData.startDate}
+                        onSelect={(date) => {
+                          handleDateChange("startDate", date);
+                          setStartDateOpen(false);
+                        }}
+                        disabled={(date) => date < new Date()}
+                        className="text-[var(--tw-text)]"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-[200px] relative">
+                  <label
+                    htmlFor="endDate"
+                    className="block mb-2 font-medium text-[var(--tw-text)]"
+                  >
+                    End Date
+                  </label>
+                  <Button
+                    ref={endDateBtnRef}
+                    type="button"
+                    variant="outline"
+                    className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
+                      validationErrors.endDate
+                        ? "border-red-500"
+                        : "border-[var(--tw-border)] text-[var(--tw-text)]"
+                    }`}
+                    onClick={() => {
+                      setEndDateOpen(!endDateOpen);
+                      setStartDateOpen(false);
+                    }}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {currentData.endDate ? (
+                      format(currentData.endDate, "PPP")
+                    ) : (
+                      <span>Select end date</span>
+                    )}
+                  </Button>
+                  {validationErrors.endDate && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {validationErrors.endDate}
+                    </p>
+                  )}
+
+                  {endDateOpen && (
+                    <div
+                      ref={endCalendarRef}
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={currentData.endDate}
+                        onSelect={(date) => {
+                          handleDateChange("endDate", date);
+                          setEndDateOpen(false);
+                        }}
+                        disabled={(date) =>
+                          date < new Date() ||
+                          (currentData.startDate
+                            ? date < currentData.startDate
+                            : false)
+                        }
+                        className="text-[var(--tw-text)]"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-[200px] flex items-end">
+                  <button
+                    type="submit"
+                    className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white"
+                  >
+                    {isCreatingTrip ? "Creating Trip..." : "Start Planning"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="relative">
+                  <label className="block mb-2 font-medium text-[var(--tw-text)]">
                     Arrival City
                   </label>
                   <input
+                    ref={arrivalCityInputRef}
                     type="text"
-                    id="arrivalCity"
-                    name="arrivalCity"
-                    placeholder="Which city are you arriving in?"
-                    value={searchData.arrivalCity}
-                    className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 placeholder-custom bg-[var(--tw-field)] border text-[var(--tw-text)] ${
+                    placeholder="Where will you arrive?"
+                    value={arrivalCityInput}
+                    onChange={(e) =>
+                      handleAdvancedInputChange("arrivalCity", e.target.value)
+                    }
+                    className={`w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] placeholder-opacity-60 ${
                       validationErrors.arrivalCity
                         ? "border-red-500 focus:border-red-500"
                         : "border-[var(--tw-border)] focus:border-[var(--tw-text)]"
                     }`}
                     autoComplete="off"
-                    onChange={(e) => {
-                      setSearchData((prev) => ({
-                        ...prev,
-                        arrivalCity: e.target.value,
-                      }));
-                      handleCitySearch(e.target.value, "arrival");
-                      clearValidationError("arrivalCity");
-                    }}
-                    onFocus={() => {
-                      if (searchData.arrivalCity.length >= 2) {
-                        handleCitySearch(searchData.arrivalCity, "arrival");
-                      }
-                    }}
                   />
                   {validationErrors.arrivalCity && (
                     <p className="text-red-500 text-sm mt-1">
                       {validationErrors.arrivalCity}
                     </p>
                   )}
-                  {isSearchingCities && currentSearchType === "arrival" && (
+                  {isSearching && activeSearchField === "arrivalCity" && (
                     <div className="absolute right-3 top-9">
-                      <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-7" />
+                      <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-70" />
                     </div>
                   )}
+                </div>
 
-                  {citySearchResults.length > 0 &&
-                    currentSearchType === "arrival" && (
-                      <div className="absolute z-50 mt-1 w-[85%] max-w-md bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg max-h-60 overflow-y-auto">
-                        {citySearchResults.map((result, index) => (
-                          <div
-                            key={index}
-                            className="p-3 hover:bg-[var(--tw-subbackground)] hover:bg-opacity-30 cursor-pointer border-b border-[var(--tw-border)] last:border-0 flex items-start"
-                            onClick={() => {
-                              setSelectedArrivalLocation(result);
-                              setSearchData((prev) => ({
-                                ...prev,
-                                arrivalCity: result.formatted,
-                              }));
-                              setCitySearchResults([]);
-                              setCurrentSearchType("");
-                            }}
-                          >
-                            <MapPin className="h-5 w-5 mr-2 flex-shrink-0 text-[var(--tw-focus)]" />
-                            <div>
-                              <p className="font-medium text-[var(--tw-text)]">
-                                {formatLocationName(result)}
-                              </p>
-                              <p className="text-sm text-[var(--tw-text)] opacity-70">
-                                {result.formatted}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                <div className="relative">
+                  <label className="block mb-2 font-medium text-[var(--tw-text)]">
+                    Departure City
+                  </label>
+                  <input
+                    ref={departureCityInputRef}
+                    type="text"
+                    placeholder="Where will you depart from?"
+                    value={departureCityInput}
+                    onChange={(e) =>
+                      handleAdvancedInputChange("departureCity", e.target.value)
+                    }
+                    className={`w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] placeholder-opacity-60 ${
+                      validationErrors.departureCity
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-[var(--tw-border)] focus:border-[var(--tw-text)]"
+                    }`}
+                    autoComplete="off"
+                  />
+                  {validationErrors.departureCity && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {validationErrors.departureCity}
+                    </p>
+                  )}
+                  {isSearching && activeSearchField === "departureCity" && (
+                    <div className="absolute right-3 top-9">
+                      <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-6">
+                <div className="flex-1 min-w-[200px] relative">
+                  <label className="block mb-2 font-medium text-[var(--tw-text)]">
+                    Start Date
+                  </label>
+                  <Button
+                    ref={startDateBtnRef}
+                    type="button"
+                    variant="outline"
+                    className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
+                      validationErrors.startDate
+                        ? "border-red-500"
+                        : "border-[var(--tw-border)] text-[var(--tw-text)]"
+                    }`}
+                    onClick={() => {
+                      setStartDateOpen(!startDateOpen);
+                      setEndDateOpen(false);
+                    }}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {currentData.startDate ? (
+                      format(currentData.startDate, "PPP")
+                    ) : (
+                      <span>Select start date</span>
                     )}
-                </div>
+                  </Button>
+                  {validationErrors.startDate && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {validationErrors.startDate}
+                    </p>
+                  )}
 
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="sameDestination"
-                      className="w-4 h-4 text-[var(--tw-focus)] bg-[var(--tw-field)] border-[var(--tw-border)] rounded focus:ring-[var(--tw-focus)]"
-                      checked={
-                        searchData.departureCity === searchData.arrivalCity
-                      }
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSearchData((prev) => ({
-                            ...prev,
-                            departureCity: prev.arrivalCity,
-                          }));
-                          setSelectedDepartureLocation(selectedArrivalLocation);
-                        } else {
-                          setSearchData((prev) => ({
-                            ...prev,
-                            departureCity: "",
-                          }));
-                          setSelectedDepartureLocation(null);
-                        }
-                      }}
-                    />
-                    <label
-                      htmlFor="sameDestination"
-                      className="text-sm text-[var(--tw-text)]"
+                  {startDateOpen && (
+                    <div
+                      ref={startCalendarRef}
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
                     >
-                      Same departure city as arrival
-                    </label>
-                  </div>
-
-                  {!searchData.arrivalCity ||
-                  searchData.departureCity !== searchData.arrivalCity ? (
-                    <div className="w-full relative">
-                      <label
-                        htmlFor="departureCity"
-                        className="block mb-2 font-medium text-[var(--tw-text)]"
-                      >
-                        Departure City
-                      </label>
-                      <input
-                        type="text"
-                        id="departureCity"
-                        name="departureCity"
-                        placeholder="Which city are you departing from?"
-                        value={searchData.departureCity}
-                        className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 placeholder-custom bg-[var(--tw-field)] border text-[var(--tw-text)] ${
-                          validationErrors.departureCity
-                            ? "border-red-500 focus:border-red-500"
-                            : "border-[var(--tw-border)] focus:border-[var(--tw-text)]"
-                        }`}
-                        autoComplete="off"
-                        onChange={(e) => {
-                          setSearchData((prev) => ({
-                            ...prev,
-                            departureCity: e.target.value,
-                          }));
-                          handleCitySearch(e.target.value, "departure");
-                          clearValidationError("departureCity");
+                      <Calendar
+                        mode="single"
+                        selected={currentData.startDate}
+                        onSelect={(date) => {
+                          handleDateChange("startDate", date);
+                          setStartDateOpen(false);
                         }}
-                        onFocus={() => {
-                          if (searchData.departureCity.length >= 2) {
-                            handleCitySearch(
-                              searchData.departureCity,
-                              "departure"
-                            );
-                          }
-                        }}
+                        disabled={(date) => date < new Date()}
+                        className="text-[var(--tw-text)]"
                       />
-                      {validationErrors.departureCity && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {validationErrors.departureCity}
-                        </p>
-                      )}
-                      {isSearchingCities &&
-                        currentSearchType === "departure" && (
-                          <div className="absolute right-3 top-9">
-                            <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-7" />
-                          </div>
-                        )}
-
-                      {citySearchResults.length > 0 &&
-                        currentSearchType === "departure" && (
-                          <div className="absolute z-50 mt-1 w-[85%] max-w-md bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg max-h-48 overflow-hidden">
-                            <div className="overflow-y-auto max-h-48">
-                              {citySearchResults.map((result, index) => (
-                                <div
-                                  key={index}
-                                  className="p-3 hover:bg-[var(--tw-subbackground)] hover:bg-opacity-30 cursor-pointer border-b border-[var(--tw-border)] last:border-0 flex items-start"
-                                  onClick={() => {
-                                    setSelectedDepartureLocation(result);
-                                    setSearchData((prev) => ({
-                                      ...prev,
-                                      departureCity: result.formatted,
-                                    }));
-                                    setCitySearchResults([]);
-                                    setCurrentSearchType("");
-                                  }}
-                                >
-                                  <MapPin className="h-5 w-5 mr-2 flex-shrink-0 text-[var(--tw-focus)]" />
-                                  <div>
-                                    <p className="font-medium text-[var(--tw-text)]">
-                                      {formatLocationName(result)}
-                                    </p>
-                                    <p className="text-sm text-[var(--tw-text)] opacity-70">
-                                      {result.formatted}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                     </div>
-                  ) : null}
+                  )}
                 </div>
-              </>
-            )}
 
-            <div className="flex flex-wrap gap-6">
-              <div className="flex-1 min-w-[200px] relative">
-                <label
-                  htmlFor="startDate"
-                  className="block mb-2 font-medium text-[var(--tw-text)]"
-                >
-                  Start Date
-                </label>
-                <Button
-                  ref={startDateBtnRef}
-                  type="button"
-                  variant="outline"
-                  className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
-                    validationErrors.startDate
-                      ? "border-red-500"
-                      : "border-[var(--tw-border)] text-[var(--tw-text)]"
-                  }`}
-                  onClick={() => {
-                    setStartDateOpen(!startDateOpen);
-                    setEndDateOpen(false);
-                  }}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {searchData.startDate ? (
-                    format(searchData.startDate, "PPP")
-                  ) : (
-                    <span>Select start date</span>
-                  )}
-                </Button>
-                {validationErrors.startDate && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {validationErrors.startDate}
-                  </p>
-                )}
-
-                {startDateOpen && (
-                  <div
-                    ref={startCalendarRef}
-                    className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                <div className="flex-1 min-w-[200px] relative">
+                  <label className="block mb-2 font-medium text-[var(--tw-text)]">
+                    End Date
+                  </label>
+                  <Button
+                    ref={endDateBtnRef}
+                    type="button"
+                    variant="outline"
+                    className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
+                      validationErrors.endDate
+                        ? "border-red-500"
+                        : "border-[var(--tw-border)] text-[var(--tw-text)]"
+                    }`}
+                    onClick={() => {
+                      setEndDateOpen(!endDateOpen);
+                      setStartDateOpen(false);
+                    }}
                   >
-                    <Calendar
-                      mode="single"
-                      selected={searchData.startDate}
-                      onSelect={(date) => {
-                        handleDateChange("startDate", date);
-                        setStartDateOpen(false);
-                      }}
-                      disabled={(date) => date < new Date()}
-                      className="text-[var(--tw-text)]"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-[200px] relative">
-                <label
-                  htmlFor="endDate"
-                  className="block mb-2 font-medium text-[var(--tw-text)]"
-                >
-                  End Date
-                </label>
-                <Button
-                  ref={endDateBtnRef}
-                  type="button"
-                  variant="outline"
-                  className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
-                    validationErrors.endDate
-                      ? "border-red-500"
-                      : "border-[var(--tw-border)] text-[var(--tw-text)]"
-                  }`}
-                  onClick={() => {
-                    setEndDateOpen(!endDateOpen);
-                    setStartDateOpen(false);
-                  }}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {searchData.endDate ? (
-                    format(searchData.endDate, "PPP")
-                  ) : (
-                    <span>Select end date</span>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {currentData.endDate ? (
+                      format(currentData.endDate, "PPP")
+                    ) : (
+                      <span>Select end date</span>
+                    )}
+                  </Button>
+                  {validationErrors.endDate && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {validationErrors.endDate}
+                    </p>
                   )}
-                </Button>
-                {validationErrors.endDate && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {validationErrors.endDate}
-                  </p>
-                )}
 
-                {endDateOpen && (
-                  <div
-                    ref={endCalendarRef}
-                    className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                  {endDateOpen && (
+                    <div
+                      ref={endCalendarRef}
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={currentData.endDate}
+                        onSelect={(date) => {
+                          handleDateChange("endDate", date);
+                          setEndDateOpen(false);
+                        }}
+                        disabled={(date) =>
+                          date < new Date() ||
+                          (currentData.startDate
+                            ? date < currentData.startDate
+                            : false)
+                        }
+                        className="text-[var(--tw-text)]"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-[200px] flex items-end">
+                  <button
+                    type="submit"
+                    className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white"
                   >
-                    <Calendar
-                      mode="single"
-                      selected={searchData.endDate}
-                      onSelect={(date) => {
-                        handleDateChange("endDate", date);
-                        setEndDateOpen(false);
-                      }}
-                      disabled={(date) =>
-                        date < new Date() ||
-                        (searchData.startDate
-                          ? date < searchData.startDate
-                          : false)
-                      }
-                      className="text-[var(--tw-text)]"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-[200px] flex items-end">
-                <button
-                  type="submit"
-                  className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white"
-                >
-                  {isCreatingTrip ? "Creating Trip..." : "Start Planning"}
-                </button>
+                    {isCreatingTrip ? "Creating Trip..." : "Start Planning"}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {searchResults.length > 0 && activeSearchField && (
+            <div
+              ref={searchResultsRef}
+              className="absolute z-50 bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg max-h-60 overflow-y-auto"
+              style={{
+                top: `${getDropdownPosition().top}px`,
+                left: `${getDropdownPosition().left}px`,
+                width: `${getDropdownPosition().width}px`,
+                scrollbarWidth: "thin",
+                scrollbarColor: "var(--tw-subbackground) var(--tw-background)",
+                "--webkit-scrollbar-width": "8px",
+                "--webkit-scrollbar-track-background": "var(--tw-background)",
+                "--webkit-scrollbar-thumb-background":
+                  "var(--tw-subbackground)",
+                "--webkit-scrollbar-thumb-border": "1px solid var(--tw-border)",
+                "--webkit-scrollbar-thumb-border-radius": "4px",
+                "--webkit-scrollbar-thumb-hover-background": "var(--tw-focus)",
+              }}
+            >
+              {searchResults.map((result, index) => (
+                <div
+                  key={index}
+                  className="p-3 hover:bg-[var(--tw-subbackground)] hover:bg-opacity-30 cursor-pointer border-b border-[var(--tw-border)] last:border-0 flex items-start"
+                  onClick={() => handleSelectLocation(result)}
+                >
+                  <MapPin className="h-5 w-5 mr-2 flex-shrink-0 text-[var(--tw-focus)]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[var(--tw-text)] truncate">
+                      {formatLocationName(result)}
+                    </p>
+                    <p className="text-sm text-[var(--tw-text)] opacity-70 truncate">
+                      {result.formatted}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </form>
+
         <div className="mt-12 text-center">
           <p className="text-lg opacity-90 text-[var(--tw-text)]">
             Popular destinations:{" "}
@@ -890,13 +875,6 @@ export default function TripSearch() {
           </p>
         </div>
       </div>
-
-      <style jsx>{`
-        .placeholder-custom::placeholder {
-          color: var(--tw-text);
-          opacity: 0.6;
-        }
-      `}</style>
     </section>
   );
 }
