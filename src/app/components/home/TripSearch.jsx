@@ -33,6 +33,7 @@ export default function TripSearch() {
   const [activeSearchField, setActiveSearchField] = useState(null);
   const [arrivalCityInput, setArrivalCityInput] = useState("");
   const [departureCityInput, setDepartureCityInput] = useState("");
+  const [sameAsDeparture, setSameAsDeparture] = useState(true);
 
   const searchResultsRef = useRef(null);
   const startDateBtnRef = useRef(null);
@@ -45,6 +46,17 @@ export default function TripSearch() {
 
   const { currentUser } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (sameAsDeparture && advancedTripData.arrivalCity) {
+      setAdvancedTripData((prev) => ({
+        ...prev,
+        departureCity: prev.arrivalCity,
+      }));
+      setDepartureCityInput(arrivalCityInput);
+      clearValidationError("departureCity");
+    }
+  }, [sameAsDeparture, advancedTripData.arrivalCity, arrivalCityInput]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -113,7 +125,7 @@ export default function TripSearch() {
       if (!advancedTripData.arrivalCity) {
         errors.arrivalCity = "Please select an arrival city";
       }
-      if (!advancedTripData.departureCity) {
+      if (!sameAsDeparture && !advancedTripData.departureCity) {
         errors.departureCity = "Please select a departure city";
       }
       if (!advancedTripData.startDate) {
@@ -147,6 +159,7 @@ export default function TripSearch() {
 
     if (name === "destination") {
       clearValidationError("destination");
+      setSelectedLocation(null);
       handleDestinationSearch(value, "destination");
     }
   };
@@ -156,14 +169,42 @@ export default function TripSearch() {
 
     if (field === "arrivalCity") {
       setArrivalCityInput(value);
-    } else if (field === "departureCity") {
+      setAdvancedTripData((prev) => ({ ...prev, arrivalCity: null }));
+
+      if (sameAsDeparture) {
+        setDepartureCityInput(value);
+        setAdvancedTripData((prev) => ({ ...prev, departureCity: null }));
+      }
+    } else if (field === "departureCity" && !sameAsDeparture) {
       setDepartureCityInput(value);
+      setAdvancedTripData((prev) => ({ ...prev, departureCity: null }));
     }
 
-    handleDestinationSearch(value, field);
+    if (!(field === "departureCity" && sameAsDeparture)) {
+      handleDestinationSearch(value, field);
+    }
   };
 
-  const handleDestinationSearch = (query, fieldType = "destination") => {
+  const handleSameAsDepartureChange = (checked) => {
+    setSameAsDeparture(checked);
+
+    if (checked && advancedTripData.arrivalCity) {
+      setAdvancedTripData((prev) => ({
+        ...prev,
+        departureCity: prev.arrivalCity,
+      }));
+      setDepartureCityInput(arrivalCityInput);
+      clearValidationError("departureCity");
+    } else if (!checked) {
+      setAdvancedTripData((prev) => ({
+        ...prev,
+        departureCity: null,
+      }));
+      setDepartureCityInput("");
+    }
+  };
+
+  const handleDestinationSearch = async (query, fieldType = "destination") => {
     if (searchTimeout) {
       clearTimeout(searchTimeout);
     }
@@ -186,7 +227,13 @@ export default function TripSearch() {
             process.env.NEXT_PUBLIC_OPENCAGE_API_KEY
           }&limit=8&no_annotations=1&language=en&roadinfo=0&address_only=1`
         );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
+
         if (data.results && data.results.length > 0) {
           const cityResults = data.results.filter(
             (result) =>
@@ -204,8 +251,8 @@ export default function TripSearch() {
           setSearchResults([]);
         }
       } catch (error) {
-        console.error("Error fetching location data:", error);
         setSearchResults([]);
+        setError("Failed to search locations. Please try again.");
       } finally {
         setIsSearching(false);
       }
@@ -223,7 +270,13 @@ export default function TripSearch() {
         setAdvancedTripData((prev) => ({ ...prev, arrivalCity: location }));
         setArrivalCityInput(location.formatted);
         clearValidationError("arrivalCity");
-      } else if (activeSearchField === "departureCity") {
+
+        if (sameAsDeparture) {
+          setAdvancedTripData((prev) => ({ ...prev, departureCity: location }));
+          setDepartureCityInput(location.formatted);
+          clearValidationError("departureCity");
+        }
+      } else if (activeSearchField === "departureCity" && !sameAsDeparture) {
         setAdvancedTripData((prev) => ({ ...prev, departureCity: location }));
         setDepartureCityInput(location.formatted);
         clearValidationError("departureCity");
@@ -300,13 +353,20 @@ export default function TripSearch() {
       let newTrip;
 
       if (tripType === "simple") {
+        if (!selectedLocation) {
+          setError("Please select a destination from the dropdown");
+          return;
+        }
+
+        const cityName =
+          selectedLocation.components?.city ||
+          selectedLocation.components?.town ||
+          selectedLocation.components?.village ||
+          selectedLocation.formatted.split(",")[0];
+
         newTrip = {
           type: "simple",
-          name: `Trip to ${
-            selectedLocation.components?.city ||
-            selectedLocation.components?.town ||
-            selectedLocation.formatted
-          }`,
+          name: `Trip to ${cityName}`,
           destination: selectedLocation.formatted,
           locationDetails: {
             ...selectedLocation,
@@ -335,18 +395,32 @@ export default function TripSearch() {
           },
         };
       } else {
+        if (
+          !advancedTripData.arrivalCity ||
+          (!sameAsDeparture && !advancedTripData.departureCity)
+        ) {
+          setError("Please select valid cities from the dropdown");
+          return;
+        }
+
         const arrivalCityName =
           advancedTripData.arrivalCity.components?.city ||
           advancedTripData.arrivalCity.components?.town ||
+          advancedTripData.arrivalCity.components?.village ||
           advancedTripData.arrivalCity.formatted.split(",")[0];
-        const departureCityName =
-          advancedTripData.departureCity.components?.city ||
-          advancedTripData.departureCity.components?.town ||
-          advancedTripData.departureCity.formatted.split(",")[0];
+
+        const departureCityName = sameAsDeparture
+          ? arrivalCityName
+          : advancedTripData.departureCity.components?.city ||
+            advancedTripData.departureCity.components?.town ||
+            advancedTripData.departureCity.components?.village ||
+            advancedTripData.departureCity.formatted.split(",")[0];
 
         newTrip = {
           type: "advanced",
-          name: `Trip from ${arrivalCityName} to ${departureCityName}`,
+          name: sameAsDeparture
+            ? `Round trip to ${arrivalCityName}`
+            : `Trip from ${arrivalCityName} to ${departureCityName}`,
           arrivalCity: {
             ...advancedTripData.arrivalCity,
             geometry: {
@@ -361,6 +435,7 @@ export default function TripSearch() {
               lng: advancedTripData.departureCity.geometry?.lng || 0,
             },
           },
+          isRoundTrip: sameAsDeparture,
           startDate: advancedTripData.startDate,
           endDate: advancedTripData.endDate,
           createdBy: currentUser.uid,
@@ -370,7 +445,7 @@ export default function TripSearch() {
           },
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          itinerary: [],
+          cities: [],
           budget: {
             total: 0,
             accommodation: 0,
@@ -385,7 +460,6 @@ export default function TripSearch() {
       const docRef = await addDoc(collection(db, "trips"), newTrip);
       router.push(`/planning/${docRef.id}`);
     } catch (error) {
-      console.error("Error creating trip:", error);
       setError("Failed to create trip. Please try again.");
     } finally {
       setIsCreatingTrip(false);
@@ -395,6 +469,33 @@ export default function TripSearch() {
   const handleSubmit = (e) => {
     e.preventDefault();
     createTrip();
+  };
+
+  const handleTripTypeChange = (type) => {
+    setTripType(type);
+    setError("");
+    setValidationErrors({});
+    setSearchResults([]);
+    setActiveSearchField(null);
+
+    if (type === "simple") {
+      setSearchData({
+        destination: "",
+        startDate: undefined,
+        endDate: undefined,
+      });
+      setSelectedLocation(null);
+    } else {
+      setAdvancedTripData({
+        arrivalCity: null,
+        departureCity: null,
+        startDate: undefined,
+        endDate: undefined,
+      });
+      setArrivalCityInput("");
+      setDepartureCityInput("");
+      setSameAsDeparture(true);
+    }
   };
 
   const currentData = tripType === "simple" ? searchData : advancedTripData;
@@ -449,8 +550,8 @@ export default function TripSearch() {
           <div className="flex justify-center gap-4">
             <button
               type="button"
-              onClick={() => setTripType("simple")}
-              className={`cursor-pointer px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+              onClick={() => handleTripTypeChange("simple")}
+              className={`cursor-pointer w-40 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
                 tripType === "simple"
                   ? "bg-[var(--tw-focus)] text-white"
                   : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] hover:bg-opacity-80"
@@ -460,8 +561,8 @@ export default function TripSearch() {
             </button>
             <button
               type="button"
-              onClick={() => setTripType("advanced")}
-              className={`cursor-pointer px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+              onClick={() => handleTripTypeChange("advanced")}
+              className={`cursor-pointer w-40 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
                 tripType === "advanced"
                   ? "bg-[var(--tw-focus)] text-white"
                   : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] hover:bg-opacity-80"
@@ -471,6 +572,14 @@ export default function TripSearch() {
             </button>
           </div>
         </div>
+
+        {error && (
+          <div className="max-w-4xl mx-auto mb-6">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          </div>
+        )}
 
         <form
           onSubmit={handleSubmit}
@@ -498,12 +607,6 @@ export default function TripSearch() {
                       ? "border-red-500 focus:border-red-500"
                       : "border-[var(--tw-border)] focus:border-[var(--tw-text)]"
                   }`}
-                  style={{
-                    "::placeholder": {
-                      color: "var(--tw-text)",
-                      opacity: 0.6,
-                    },
-                  }}
                   autoComplete="off"
                 />
                 {validationErrors.destination && (
@@ -520,10 +623,7 @@ export default function TripSearch() {
 
               <div className="flex flex-wrap gap-6">
                 <div className="flex-1 min-w-[200px] relative">
-                  <label
-                    htmlFor="startDate"
-                    className="block mb-2 font-medium text-[var(--tw-text)]"
-                  >
+                  <label className="block mb-2 font-medium text-[var(--tw-text)]">
                     Start Date
                   </label>
                   <Button
@@ -573,10 +673,7 @@ export default function TripSearch() {
                 </div>
 
                 <div className="flex-1 min-w-[200px] relative">
-                  <label
-                    htmlFor="endDate"
-                    className="block mb-2 font-medium text-[var(--tw-text)]"
-                  >
+                  <label className="block mb-2 font-medium text-[var(--tw-text)]">
                     End Date
                   </label>
                   <Button
@@ -633,7 +730,8 @@ export default function TripSearch() {
                 <div className="flex-1 min-w-[200px] flex items-end">
                   <button
                     type="submit"
-                    className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white"
+                    disabled={isCreatingTrip}
+                    className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isCreatingTrip ? "Creating Trip..." : "Start Planning"}
                   </button>
@@ -681,12 +779,19 @@ export default function TripSearch() {
                   <input
                     ref={departureCityInputRef}
                     type="text"
-                    placeholder="Where will you depart from?"
+                    placeholder={
+                      sameAsDeparture
+                        ? "Same as arrival city"
+                        : "Where will you depart from?"
+                    }
                     value={departureCityInput}
                     onChange={(e) =>
                       handleAdvancedInputChange("departureCity", e.target.value)
                     }
+                    disabled={sameAsDeparture}
                     className={`w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] placeholder-opacity-60 ${
+                      sameAsDeparture ? "opacity-50 cursor-not-allowed" : ""
+                    } ${
                       validationErrors.departureCity
                         ? "border-red-500 focus:border-red-500"
                         : "border-[var(--tw-border)] focus:border-[var(--tw-text)]"
@@ -698,11 +803,56 @@ export default function TripSearch() {
                       {validationErrors.departureCity}
                     </p>
                   )}
-                  {isSearching && activeSearchField === "departureCity" && (
-                    <div className="absolute right-3 top-9">
-                      <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                  {isSearching &&
+                    activeSearchField === "departureCity" &&
+                    !sameAsDeparture && (
+                      <div className="absolute right-3 top-9">
+                        <Loader2 className="animate-spin h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                      </div>
+                    )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    id="sameAsDeparture"
+                    checked={sameAsDeparture}
+                    onChange={(e) =>
+                      handleSameAsDepartureChange(e.target.checked)
+                    }
+                    className="sr-only"
+                  />
+                  <label
+                    htmlFor="sameAsDeparture"
+                    className="flex items-center cursor-pointer"
+                  >
+                    <div
+                      className={`w-5 h-5 border-2 rounded-sm flex items-center justify-center transition-all duration-200 ${
+                        sameAsDeparture
+                          ? "bg-[var(--tw-focus)] border-[var(--tw-focus)]"
+                          : "bg-[var(--tw-field)] border-[var(--tw-border)] hover:border-[var(--tw-text)]"
+                      }`}
+                    >
+                      {sameAsDeparture && (
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
                     </div>
-                  )}
+                    <span className="ml-3 text-[var(--tw-text)] text-sm font-medium">
+                      Departure city same as arrival city (Round trip)
+                    </span>
+                  </label>
                 </div>
               </div>
 
@@ -815,7 +965,8 @@ export default function TripSearch() {
                 <div className="flex-1 min-w-[200px] flex items-end">
                   <button
                     type="submit"
-                    className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white"
+                    disabled={isCreatingTrip}
+                    className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isCreatingTrip ? "Creating Trip..." : "Start Planning"}
                   </button>
@@ -832,15 +983,6 @@ export default function TripSearch() {
                 top: `${getDropdownPosition().top}px`,
                 left: `${getDropdownPosition().left}px`,
                 width: `${getDropdownPosition().width}px`,
-                scrollbarWidth: "thin",
-                scrollbarColor: "var(--tw-subbackground) var(--tw-background)",
-                "--webkit-scrollbar-width": "8px",
-                "--webkit-scrollbar-track-background": "var(--tw-background)",
-                "--webkit-scrollbar-thumb-background":
-                  "var(--tw-subbackground)",
-                "--webkit-scrollbar-thumb-border": "1px solid var(--tw-border)",
-                "--webkit-scrollbar-thumb-border-radius": "4px",
-                "--webkit-scrollbar-thumb-hover-background": "var(--tw-focus)",
               }}
             >
               {searchResults.map((result, index) => (
