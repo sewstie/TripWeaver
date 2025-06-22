@@ -1,8 +1,15 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { X, MapPin, Loader2 } from "lucide-react";
+import { createScrollLock } from "@/lib/utils/modalUtils";
 
 export default function AddCityModal({
   tripId,
@@ -10,22 +17,45 @@ export default function AddCityModal({
   availableDays,
   existingCities,
   trip,
+  editingCity = null,
 }) {
   const [formData, setFormData] = useState({
-    name: "",
-    duration: Math.min(3, Math.max(1, availableDays)),
-    notes: "",
+    name: editingCity?.name || "",
+    duration:
+      editingCity?.duration ||
+      Math.min(3, Math.max(1, availableDays + (editingCity?.duration || 0))),
+    notes: editingCity?.notes || "",
   });
-  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(
+    editingCity?.locationDetails || null
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [isSearchingLocations, setIsSearchingLocations] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState(null);
+  const [scrollY, setScrollY] = useState(0);
 
   const locationInputRef = useRef(null);
   const suggestionsRef = useRef(null);
+
+  const isEditing = !!editingCity;
+  const canEditName = isEditing
+    ? !editingCity.isArrivalCity &&
+      !editingCity.isDepartureCity &&
+      !editingCity.isRoundTripArrival &&
+      !editingCity.isRoundTripDeparture
+    : true;
+  const maxDuration = availableDays + (editingCity?.duration || 0);
+
+  useEffect(() => {
+    const currentScrollY = window.scrollY;
+    setScrollY(currentScrollY);
+
+    const removeScrollLock = createScrollLock();
+    return removeScrollLock;
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -123,13 +153,16 @@ export default function AddCityModal({
       return;
     }
 
-    if (formData.duration < 1 || formData.duration > availableDays) {
-      setError(`Duration must be between 1 and ${availableDays} days`);
+    if (formData.duration < 1 || formData.duration > maxDuration) {
+      setError(`Duration must be between 1 and ${maxDuration} days`);
       return;
     }
 
     const regularCities = existingCities.filter(
-      (c) => !c.isArrivalCity && !c.isDepartureCity
+      (c) =>
+        !c.isArrivalCity &&
+        !c.isDepartureCity &&
+        (!isEditing || c.id !== editingCity.id)
     );
     const cityExists = regularCities.some(
       (city) => city.name.toLowerCase() === formData.name.toLowerCase()
@@ -148,11 +181,20 @@ export default function AddCityModal({
         name: formData.name.trim(),
         duration: parseInt(formData.duration),
         notes: formData.notes.trim(),
-        order: existingCities.filter(
+        updatedAt: new Date(),
+      };
+
+      if (isEditing) {
+        await updateDoc(
+          doc(db, "trips", tripId, "cities", editingCity.id),
+          cityData
+        );
+      } else {
+        cityData.order = existingCities.filter(
           (c) => !c.isArrivalCity && !c.isDepartureCity
-        ).length,
-        createdAt: serverTimestamp(),
-        locationDetails: selectedLocation
+        ).length;
+        cityData.createdAt = serverTimestamp();
+        cityData.locationDetails = selectedLocation
           ? {
               ...selectedLocation,
               geometry: {
@@ -160,14 +202,17 @@ export default function AddCityModal({
                 lng: selectedLocation.geometry?.lng || 0,
               },
             }
-          : null,
-      };
+          : null;
 
-      await addDoc(collection(db, "trips", tripId, "cities"), cityData);
+        await addDoc(collection(db, "trips", tripId, "cities"), cityData);
+      }
+
       onClose();
     } catch (error) {
-      console.error("Error adding city:", error);
-      setError("Failed to add city. Please try again.");
+      console.error(`Error ${isEditing ? "updating" : "adding"} city:`, error);
+      setError(
+        `Failed to ${isEditing ? "update" : "add"} city. Please try again.`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -179,135 +224,186 @@ export default function AddCityModal({
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div className="fixed top-0 left-0 right-0 bottom-0 bg-black opacity-50 backdrop-blur-sm"></div>
-      <div className="bg-[var(--tw-background)] rounded-lg w-full max-w-md relative z-10">
-        <div className="flex items-center justify-between p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        height: "100vh",
+        marginTop: `${scrollY}px`,
+      }}
+    >
+      <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
+      <div className="relative bg-[var(--tw-subbackground)] rounded-lg w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col z-10">
+        <div className="flex justify-between items-center p-6 border-b border-[var(--tw-border)]">
           <h2 className="text-xl font-bold text-[var(--tw-text)]">
-            Add City to Visit
+            {isEditing ? "Edit City" : "Add City to Visit"}
           </h2>
           <button
             onClick={onClose}
-            className="cursor-pointer p-1 rounded-lg hover:bg-[var(--tw-subbackground)] transition-colors"
+            className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-[var(--tw-text)]" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <div
+          className="overflow-y-auto flex-1 p-6"
+          style={{ scrollbarColor: "var(--tw-border) transparent" }}
+        >
           {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          <div className="relative">
-            <label className="block text-sm font-medium text-[var(--tw-text)] mb-1">
-              City Name *
-            </label>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="relative">
+              <label className="block mb-2 font-medium text-[var(--tw-text)]">
+                City Name *
+              </label>
+              <div className="relative">
+                <input
+                  ref={locationInputRef}
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={canEditName ? handleLocationChange : handleChange}
+                  className={`w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors ${
+                    !canEditName ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
+                  placeholder={
+                    canEditName ? "Search for a city..." : formData.name
+                  }
+                  disabled={isSubmitting || !canEditName}
+                  autoComplete="off"
+                  required
+                />
+                {isSearchingLocations && canEditName && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <Loader2 className="animate-spin h-4 w-4 text-[var(--tw-focus)]" />
+                  </div>
+                )}
+              </div>
+
+              {!canEditName && (
+                <p className="text-xs text-[var(--tw-text)] opacity-70 mt-1">
+                  Arrival and departure cities cannot be changed
+                </p>
+              )}
+
+              {showSuggestions &&
+                locationSuggestions.length > 0 &&
+                canEditName && (
+                  <div
+                    ref={suggestionsRef}
+                    className="absolute z-10 w-full mt-1 bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    {locationSuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => handleSelectSuggestion(suggestion)}
+                        className="w-full text-left px-3 py-2 hover:bg-[var(--tw-field)] transition-colors border-b border-[var(--tw-border)] last:border-b-0"
+                      >
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[var(--tw-focus)]" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-[var(--tw-text)] truncate">
+                              {suggestion.components.city ||
+                                suggestion.components.town ||
+                                suggestion.components.village ||
+                                suggestion.formatted.split(",")[0]}
+                            </div>
+                            <div className="text-sm text-[var(--tw-text)] opacity-70 truncate">
+                              {suggestion.formatted}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium text-[var(--tw-text)]">
+                Duration (days) *
+              </label>
               <input
-                ref={locationInputRef}
                 type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleLocationChange}
-                className="w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)]"
-                placeholder="Search for a city..."
+                name="duration"
+                value={formData.duration}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "" || /^\d+$/.test(value)) {
+                    const numValue = value === "" ? "" : parseInt(value);
+                    if (
+                      value === "" ||
+                      (numValue >= 1 && numValue <= maxDuration)
+                    ) {
+                      handleChange(e);
+                    }
+                  }
+                }}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                min="1"
+                max={maxDuration}
+                className="w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                disabled={isSubmitting}
+                required
+                placeholder="Enter number of days"
+              />
+              <p className="text-xs text-[var(--tw-text)] opacity-70 mt-1">
+                Available days: {maxDuration}
+              </p>
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium text-[var(--tw-text)]">
+                Notes (optional)
+              </label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors resize-none"
+                placeholder="Why do you want to visit this city? What are you hoping to see?"
                 disabled={isSubmitting}
                 autoComplete="off"
               />
-              {isSearchingLocations && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <Loader2 className="animate-spin h-4 w-4 text-[var(--tw-focus)]" />
-                </div>
-              )}
             </div>
+          </form>
+        </div>
 
-            {showSuggestions && locationSuggestions.length > 0 && (
-              <div
-                ref={suggestionsRef}
-                className="absolute z-10 w-full mt-1 bg-[var(--tw-background)] border border-[var(--tw-border)] rounded-lg shadow-lg max-h-60 overflow-y-auto"
-              >
-                {locationSuggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => handleSelectSuggestion(suggestion)}
-                    className="w-full text-left px-3 py-2 hover:bg-[var(--tw-field)] transition-colors border-b border-[var(--tw-border)] last:border-b-0"
-                  >
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[var(--tw-focus)]" />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-[var(--tw-text)] truncate">
-                          {suggestion.components.city ||
-                            suggestion.components.town ||
-                            suggestion.components.village ||
-                            suggestion.formatted.split(",")[0]}
-                        </div>
-                        <div className="text-sm text-[var(--tw-text)] opacity-70 truncate">
-                          {suggestion.formatted}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--tw-text)] mb-1">
-              Duration (days) *
-            </label>
-            <input
-              type="number"
-              name="duration"
-              value={formData.duration}
-              onChange={handleChange}
-              min="1"
-              max={availableDays}
-              className="w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)]"
-              disabled={isSubmitting}
-            />
-            <p className="text-xs text-[var(--tw-text)] opacity-70 mt-1">
-              Available days: {availableDays}
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--tw-text)] mb-1">
-              Notes (optional)
-            </label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={3}
-              className="w-full px-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border border-[var(--tw-border)] text-[var(--tw-text)] resize-none"
-              placeholder="Why do you want to visit this city? What are you hoping to see?"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
+        <div className="border-t border-[var(--tw-border)] p-6">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer flex-1 px-4 py-2 border border-[var(--tw-focus)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-subbackground)] transition-colors"
+              className="cursor-pointer flex-1 px-4 py-2 border border-[var(--tw-border)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-field)] transition-colors"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
-              type="submit"
-              className="cursor-pointer flex-1 px-4 py-2 bg-[var(--tw-focus)] text-white rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isSubmitting || availableDays <= 0}
+              onClick={handleSubmit}
+              className="cursor-pointer flex-1 bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              disabled={isSubmitting || maxDuration <= 0}
             >
-              {isSubmitting ? "Adding..." : "Add City"}
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  {isEditing ? "Updating..." : "Adding..."}
+                </>
+              ) : isEditing ? (
+                "Update City"
+              ) : (
+                "Add City"
+              )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

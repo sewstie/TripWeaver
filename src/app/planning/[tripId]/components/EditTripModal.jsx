@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { X, Calendar, CheckCircle } from "lucide-react";
+import { createScrollLock } from "@/lib/utils/modalUtils";
 
 export default function EditTripModal({ trip, onClose, onUpdate }) {
   const [formData, setFormData] = useState({
@@ -14,22 +15,14 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
-    const scrollY = window.scrollY;
+    const currentScrollY = window.scrollY;
+    setScrollY(currentScrollY);
 
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-    document.body.style.overflowY = "scroll";
-
-    return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      document.body.style.overflowY = "";
-      window.scrollTo(0, scrollY);
-    };
+    const removeScrollLock = createScrollLock();
+    return removeScrollLock;
   }, []);
 
   useEffect(() => {
@@ -129,12 +122,12 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{
         height: "100vh",
-        top: `${window.scrollY}px`,
+        marginTop: `${scrollY}px`,
       }}
     >
-      <div className="fixed top-0 left-0 right-0 bottom-0 bg-black opacity-50 backdrop-blur-sm"></div>
+      <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
       <div className="relative bg-[var(--tw-subbackground)] rounded-lg w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col z-10">
-        <div className="flex justify-between items-center px-6 pt-6">
+        <div className="flex justify-between items-center p-6 border-b border-[var(--tw-border)]">
           <h3 className="text-xl font-bold text-[var(--tw-text)]">
             Edit Trip Details
           </h3>
@@ -240,7 +233,7 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
           </form>
         </div>
 
-        <div className="px-6 pb-6">
+        <div className="border-t border-[var(--tw-border)] p-6">
           <div className="flex gap-3">
             <button
               type="button"

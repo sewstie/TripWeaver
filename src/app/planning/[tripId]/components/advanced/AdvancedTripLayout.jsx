@@ -32,6 +32,7 @@ export default function AdvancedTripLayout({
 }) {
   const [cities, setCities] = useState([]);
   const [isAddCityModalOpen, setIsAddCityModalOpen] = useState(false);
+  const [editingCity, setEditingCity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [setupComplete, setSetupComplete] = useState(false);
 
@@ -64,7 +65,7 @@ export default function AdvancedTripLayout({
               duration: 1,
               order: -3,
               locationDetails: trip.arrivalCity,
-              notes: "Arrival day in your base city",
+              notes: "Arrival in your home city",
             });
 
             allCities.push({
@@ -74,7 +75,7 @@ export default function AdvancedTripLayout({
               duration: 1,
               order: 1001,
               locationDetails: trip.arrivalCity,
-              notes: "Departure day from your base city",
+              notes: "Departure from your home city",
             });
           }
         } else {
@@ -174,6 +175,10 @@ export default function AdvancedTripLayout({
     return regularCities.length > 0 && getAvailableDays() >= 0;
   };
 
+  const handleEditCity = (city) => {
+    setEditingCity(city);
+  };
+
   return (
     <div className="space-y-6">
       <TripHeader
@@ -195,15 +200,36 @@ export default function AdvancedTripLayout({
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600 mb-1">
-              {
-                cities.filter(
+              {(() => {
+                const regularCities = cities.filter(
                   (c) =>
                     !c.isArrivalCity &&
                     !c.isDepartureCity &&
                     !c.isRoundTripArrival &&
                     !c.isRoundTripDeparture
-                ).length
-              }
+                ).length;
+
+                const arrivalCityName = getDisplayCityName(trip?.arrivalCity);
+                const departureCityName = getDisplayCityName(
+                  trip?.departureCity
+                );
+
+                if (trip?.isRoundTrip) {
+                  return regularCities + 1;
+                }
+
+                let transitCities = 0;
+                if (arrivalCityName) transitCities++;
+                if (
+                  departureCityName &&
+                  departureCityName.toLowerCase() !==
+                    arrivalCityName?.toLowerCase()
+                ) {
+                  transitCities++;
+                }
+
+                return regularCities + transitCities;
+              })()}
             </div>
             <div className="text-sm text-[var(--tw-text)] opacity-70">
               Cities to Visit
@@ -324,19 +350,24 @@ export default function AdvancedTripLayout({
                 canEdit={canEdit}
                 totalTrip={trip}
                 availableDays={getAvailableDays()}
+                onEditCity={handleEditCity}
               />
             ))}
           </div>
         )}
       </div>
 
-      {isAddCityModalOpen && (
+      {(isAddCityModalOpen || editingCity) && (
         <AddCityModal
           tripId={tripId}
-          onClose={() => setIsAddCityModalOpen(false)}
+          onClose={() => {
+            setIsAddCityModalOpen(false);
+            setEditingCity(null);
+          }}
           availableDays={getAvailableDays()}
           existingCities={cities}
           trip={trip}
+          editingCity={editingCity}
         />
       )}
 
