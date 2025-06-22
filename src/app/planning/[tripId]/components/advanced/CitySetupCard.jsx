@@ -27,7 +27,9 @@ export default function CitySetupCard({
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
-    if (editDuration < 1) return;
+    const minDuration =
+      city.isRoundTripArrival || city.isRoundTripDeparture ? 1 : 1;
+    if (editDuration < minDuration) return;
 
     setIsSaving(true);
     try {
@@ -73,35 +75,50 @@ export default function CitySetupCard({
     );
   }
 
-  const isSpecialCity = city.isArrivalCity || city.isDepartureCity;
-  const maxDuration = isSpecialCity ? 0 : availableDays + (city.duration || 0);
+  const isSpecialCity =
+    city.isArrivalCity ||
+    city.isDepartureCity ||
+    city.isRoundTripArrival ||
+    city.isRoundTripDeparture;
+  const isRoundTripCity = city.isRoundTripArrival || city.isRoundTripDeparture;
+  const canEditThisCity =
+    isRoundTripCity || (!city.isArrivalCity && !city.isDepartureCity);
+  const maxDuration = isRoundTripCity
+    ? availableDays + (city.duration || 0)
+    : isSpecialCity
+    ? 0
+    : availableDays + (city.duration || 0);
 
   return (
     <>
       <div
         className={`bg-[var(--tw-subbackground)] rounded-lg p-4 border-l-4 ${
-          city.isArrivalCity
+          city.isArrivalCity || city.isRoundTripArrival
             ? "border-green-500"
-            : city.isDepartureCity
+            : city.isDepartureCity || city.isRoundTripDeparture
             ? "border-red-500"
             : "border-[var(--tw-focus)]"
         }`}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
-            {canEdit && !isSpecialCity && (
-              <div className="cursor-grab active:cursor-grabbing p-1 hover:bg-[var(--tw-field)] rounded transition-colors mt-1">
-                <GripVertical className="w-4 h-4 text-[var(--tw-text)] opacity-40" />
-              </div>
-            )}
+            {canEdit &&
+              !city.isArrivalCity &&
+              !city.isDepartureCity &&
+              !city.isRoundTripArrival &&
+              !city.isRoundTripDeparture && (
+                <div className="cursor-grab active:cursor-grabbing p-1 hover:bg-[var(--tw-field)] rounded transition-colors mt-1">
+                  <GripVertical className="w-4 h-4 text-[var(--tw-text)] opacity-40" />
+                </div>
+              )}
 
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <MapPin
                   className={`w-5 h-5 ${
-                    city.isArrivalCity
+                    city.isArrivalCity || city.isRoundTripArrival
                       ? "text-green-500"
-                      : city.isDepartureCity
+                      : city.isDepartureCity || city.isRoundTripDeparture
                       ? "text-red-500"
                       : "text-[var(--tw-focus)]"
                   }`}
@@ -119,11 +136,40 @@ export default function CitySetupCard({
                     Departure
                   </span>
                 )}
+                {city.isRoundTripArrival && (
+                  <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-xs rounded-full">
+                    Arrival Day
+                  </span>
+                )}
+                {city.isRoundTripDeparture && (
+                  <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-xs rounded-full">
+                    Departure Day
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-3 mb-3">
                 <Clock className="w-4 h-4 text-[var(--tw-text)] opacity-60" />
-                {isEditing && !isSpecialCity ? (
+                {isEditing && isRoundTripCity ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={editDuration}
+                      onChange={(e) => setEditDuration(e.target.value)}
+                      min="1"
+                      max={maxDuration}
+                      className="w-20 px-2 py-1 rounded border border-[var(--tw-border)] bg-[var(--tw-field)] text-[var(--tw-text)] text-sm"
+                    />
+                    <span className="text-sm text-[var(--tw-text)] opacity-70">
+                      {editDuration == 1 ? "day" : "days"}
+                    </span>
+                    <span className="text-xs text-[var(--tw-text)] opacity-60">
+                      {city.isRoundTripArrival
+                        ? "(arrival activities)"
+                        : "(departure activities)"}
+                    </span>
+                  </div>
+                ) : isEditing && !isSpecialCity ? (
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
@@ -139,8 +185,14 @@ export default function CitySetupCard({
                   </div>
                 ) : (
                   <span className="text-[var(--tw-text)] opacity-80">
-                    {isSpecialCity
+                    {city.isArrivalCity || city.isDepartureCity
                       ? "Transit city"
+                      : isRoundTripCity
+                      ? `${city.duration || 1} ${
+                          (city.duration || 1) === 1 ? "day" : "days"
+                        } ${
+                          city.isRoundTripArrival ? "(arrival)" : "(departure)"
+                        }`
                       : `${city.duration || 1} ${
                           (city.duration || 1) === 1 ? "day" : "days"
                         }`}
@@ -148,7 +200,7 @@ export default function CitySetupCard({
                 )}
               </div>
 
-              {isEditing && !isSpecialCity ? (
+              {isEditing && canEditThisCity ? (
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-[var(--tw-text)] mb-1">
                     Notes (optional)
@@ -156,7 +208,13 @@ export default function CitySetupCard({
                   <textarea
                     value={editNotes}
                     onChange={(e) => setEditNotes(e.target.value)}
-                    placeholder="Add notes about this city..."
+                    placeholder={
+                      city.isRoundTripArrival
+                        ? "Activities for your arrival day..."
+                        : city.isRoundTripDeparture
+                        ? "Activities before departure..."
+                        : "Add notes about this city..."
+                    }
                     rows={2}
                     className="w-full px-3 py-2 rounded border border-[var(--tw-border)] bg-[var(--tw-field)] text-[var(--tw-text)] text-sm resize-none"
                   />
@@ -172,7 +230,7 @@ export default function CitySetupCard({
                 )
               )}
 
-              {isEditing && !isSpecialCity && (
+              {isEditing && canEditThisCity && (
                 <div className="flex gap-2">
                   <button
                     onClick={handleSave}
@@ -195,7 +253,7 @@ export default function CitySetupCard({
             </div>
           </div>
 
-          {canEdit && !isSpecialCity && !isEditing && (
+          {canEdit && canEditThisCity && !isEditing && (
             <div className="flex gap-1">
               <button
                 onClick={() => setIsEditing(true)}
@@ -204,28 +262,32 @@ export default function CitySetupCard({
               >
                 <Edit className="w-4 h-4 text-[var(--tw-text)] opacity-60" />
               </button>
-              <button
-                onClick={() => setShowConfirm(true)}
-                className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded transition-colors"
-                title="Remove city"
-              >
-                <Trash2 className="w-4 h-4 text-red-500 opacity-60" />
-              </button>
+              {!isRoundTripCity && (
+                <button
+                  onClick={() => setShowConfirm(true)}
+                  className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded transition-colors"
+                  title="Remove city"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500 opacity-60" />
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      <Confirmation
-        isOpen={showConfirm}
-        onClose={() => setShowConfirm(false)}
-        onConfirm={handleDelete}
-        title="Remove City"
-        message={`Are you sure you want to remove "${city.name}" from your trip? This action cannot be undone.`}
-        confirmText="Remove"
-        cancelText="Cancel"
-        type="danger"
-      />
+      {!isRoundTripCity && !city.isArrivalCity && !city.isDepartureCity && (
+        <Confirmation
+          isOpen={showConfirm}
+          onClose={() => setShowConfirm(false)}
+          onConfirm={handleDelete}
+          title="Remove City"
+          message={`Are you sure you want to remove "${city.name}" from your trip? This action cannot be undone.`}
+          confirmText="Remove"
+          cancelText="Cancel"
+          type="danger"
+        />
+      )}
     </>
   );
 }

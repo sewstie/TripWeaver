@@ -55,36 +55,59 @@ export default function AdvancedTripLayout({
 
         const allCities = [...cityData];
 
-        if (
-          arrivalCityName &&
-          !existingCityNames.includes(arrivalCityName.toLowerCase())
-        ) {
-          allCities.unshift({
-            id: "arrival-city",
-            name: arrivalCityName,
-            isArrivalCity: true,
-            duration: 0,
-            order: -2,
-            locationDetails: trip.arrivalCity,
-            notes: "Your arrival city",
-          });
-        }
+        if (trip?.isRoundTrip && arrivalCityName) {
+          if (!existingCityNames.includes(arrivalCityName.toLowerCase())) {
+            allCities.unshift({
+              id: "round-trip-arrival",
+              name: arrivalCityName,
+              isRoundTripArrival: true,
+              duration: 1,
+              order: -3,
+              locationDetails: trip.arrivalCity,
+              notes: "Arrival day in your base city",
+            });
 
-        if (
-          departureCityName &&
-          !trip.isRoundTrip &&
-          !existingCityNames.includes(departureCityName.toLowerCase()) &&
-          departureCityName.toLowerCase() !== arrivalCityName?.toLowerCase()
-        ) {
-          allCities.push({
-            id: "departure-city",
-            name: departureCityName,
-            isDepartureCity: true,
-            duration: 0,
-            order: 1000,
-            locationDetails: trip.departureCity,
-            notes: "Your departure city",
-          });
+            allCities.push({
+              id: "round-trip-departure",
+              name: arrivalCityName,
+              isRoundTripDeparture: true,
+              duration: 1,
+              order: 1001,
+              locationDetails: trip.arrivalCity,
+              notes: "Departure day from your base city",
+            });
+          }
+        } else {
+          if (
+            arrivalCityName &&
+            !existingCityNames.includes(arrivalCityName.toLowerCase())
+          ) {
+            allCities.unshift({
+              id: "arrival-city",
+              name: arrivalCityName,
+              isArrivalCity: true,
+              duration: 0,
+              order: -2,
+              locationDetails: trip.arrivalCity,
+              notes: "Your arrival city",
+            });
+          }
+
+          if (
+            departureCityName &&
+            !existingCityNames.includes(departureCityName.toLowerCase()) &&
+            departureCityName.toLowerCase() !== arrivalCityName?.toLowerCase()
+          ) {
+            allCities.push({
+              id: "departure-city",
+              name: departureCityName,
+              isDepartureCity: true,
+              duration: 0,
+              order: 1000,
+              locationDetails: trip.departureCity,
+              notes: "Your departure city",
+            });
+          }
         }
 
         setCities(allCities.sort((a, b) => a.order - b.order));
@@ -160,33 +183,6 @@ export default function AdvancedTripLayout({
         onDelete={onDelete}
       />
 
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-[var(--tw-text)] mb-2 flex items-center gap-2">
-              <Route className="w-6 h-6 text-blue-600" />
-              Multi-City Trip Setup
-            </h2>
-            <p className="text-[var(--tw-text)] opacity-80">
-              Plan your journey by adding the cities you'll visit between{" "}
-              {getDisplayCityName(trip?.arrivalCity)} and{" "}
-              {trip?.isRoundTrip
-                ? "your return"
-                : getDisplayCityName(trip?.departureCity)}
-            </p>
-          </div>
-          {canCompleteSetup() && !setupComplete && (
-            <button
-              onClick={handleCompleteSetup}
-              className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <CheckCircle className="w-5 h-5" />
-              Complete Setup
-            </button>
-          )}
-        </div>
-      </div>
-
       <div className="bg-[var(--tw-subbackground)] rounded-lg p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="text-center">
@@ -200,8 +196,13 @@ export default function AdvancedTripLayout({
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600 mb-1">
               {
-                cities.filter((c) => !c.isArrivalCity && !c.isDepartureCity)
-                  .length
+                cities.filter(
+                  (c) =>
+                    !c.isArrivalCity &&
+                    !c.isDepartureCity &&
+                    !c.isRoundTripArrival &&
+                    !c.isRoundTripDeparture
+                ).length
               }
             </div>
             <div className="text-sm text-[var(--tw-text)] opacity-70">
@@ -257,15 +258,15 @@ export default function AdvancedTripLayout({
               )}
               <div
                 className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-                  city.isArrivalCity
+                  city.isArrivalCity || city.isRoundTripArrival
                     ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                    : city.isDepartureCity
+                    : city.isDepartureCity || city.isRoundTripDeparture
                     ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
                     : "bg-[var(--tw-focus)] text-white"
                 }`}
               >
-                {city.isArrivalCity && "🛬 "}
-                {city.isDepartureCity && "🛫 "}
+                {(city.isArrivalCity || city.isRoundTripArrival) && "🛬 "}
+                {(city.isDepartureCity || city.isRoundTripDeparture) && "🛫 "}
                 {city.name}
                 {city.duration > 0 && ` (${city.duration}d)`}
               </div>
@@ -292,7 +293,7 @@ export default function AdvancedTripLayout({
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus)]"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus]"></div>
           </div>
         ) : cities.length === 0 ? (
           <div className="bg-[var(--tw-subbackground)] rounded-lg p-8 text-center">
@@ -327,23 +328,6 @@ export default function AdvancedTripLayout({
             ))}
           </div>
         )}
-      </div>
-
-      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-        <h4 className="font-medium text-[var(--tw-text)] mb-2">
-          💡 Planning Tips:
-        </h4>
-        <ul className="text-sm text-[var(--tw-text)] opacity-80 space-y-1">
-          <li>• Add cities in the order you plan to visit them</li>
-          <li>
-            • Set realistic durations for each city based on what you want to
-            see
-          </li>
-          <li>• Consider travel time between cities when planning durations</li>
-          <li>
-            • You can always adjust durations later as you refine your plan
-          </li>
-        </ul>
       </div>
 
       {isAddCityModalOpen && (
