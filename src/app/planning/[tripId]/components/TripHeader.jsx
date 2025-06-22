@@ -31,6 +31,19 @@ export default function TripHeader({ trip, onEdit, onManageAccess, onDelete }) {
     return diffDays;
   };
 
+  const getDestination = () => {
+    if (trip?.arrivalCity) {
+      return (
+        trip.arrivalCity.components?.city ||
+        trip.arrivalCity.components?.town ||
+        trip.arrivalCity.components?.village ||
+        trip.arrivalCity.formatted?.split(",")[0] ||
+        "Unknown Destination"
+      );
+    }
+    return trip?.destination || "Unknown Destination";
+  };
+
   const isOwner = trip?.collaborators?.[currentUser?.uid] === "owner";
   const canEdit =
     isOwner || trip?.collaborators?.[currentUser?.uid] === "editor";
@@ -40,10 +53,10 @@ export default function TripHeader({ trip, onEdit, onManageAccess, onDelete }) {
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-[var(--tw-text)] mb-2">
-            {trip?.name}
+            {trip?.title || trip?.name}
           </h1>
           <p className="text-lg text-[var(--tw-text)] opacity-70 mb-3">
-            {trip?.destination}
+            {getDestination()}
           </p>
           <div className="flex gap-6 text-sm text-[var(--tw-text)] opacity-60">
             <span>Start: {formatDate(trip?.startDate)}</span>

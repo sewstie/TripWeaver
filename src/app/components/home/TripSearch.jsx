@@ -366,6 +366,7 @@ export default function TripSearch() {
 
         newTrip = {
           type: "simple",
+          title: `Trip to ${cityName}`,
           name: `Trip to ${cityName}`,
           destination: selectedLocation.formatted,
           locationDetails: {
@@ -409,18 +410,10 @@ export default function TripSearch() {
           advancedTripData.arrivalCity.components?.village ||
           advancedTripData.arrivalCity.formatted.split(",")[0];
 
-        const departureCityName = sameAsDeparture
-          ? arrivalCityName
-          : advancedTripData.departureCity.components?.city ||
-            advancedTripData.departureCity.components?.town ||
-            advancedTripData.departureCity.components?.village ||
-            advancedTripData.departureCity.formatted.split(",")[0];
-
         newTrip = {
           type: "advanced",
-          name: sameAsDeparture
-            ? `Round trip to ${arrivalCityName}`
-            : `Trip from ${arrivalCityName} to ${departureCityName}`,
+          title: `Trip to ${arrivalCityName}`,
+          name: `Trip to ${arrivalCityName}`,
           arrivalCity: {
             ...advancedTripData.arrivalCity,
             geometry: {
@@ -850,7 +843,7 @@ export default function TripSearch() {
                       )}
                     </div>
                     <span className="ml-3 text-[var(--tw-text)] text-sm font-medium">
-                      Departure city same as arrival city (Round trip)
+                      Departure city same as arrival city
                     </span>
                   </label>
                 </div>
