@@ -65,7 +65,7 @@ export default function AdvancedTripLayout({
               duration: 1,
               order: -3,
               locationDetails: trip.arrivalCity,
-              notes: "Arrival in your home city",
+              notes: "Arrival in your home town",
             });
 
             allCities.push({
@@ -75,7 +75,7 @@ export default function AdvancedTripLayout({
               duration: 1,
               order: 1001,
               locationDetails: trip.arrivalCity,
-              notes: "Departure from your home city",
+              notes: "Departure from your home town",
             });
           }
         } else {
@@ -301,7 +301,7 @@ export default function AdvancedTripLayout({
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="custom-vertical-spacing">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold text-[var(--tw-text)]">
             Cities & Duration

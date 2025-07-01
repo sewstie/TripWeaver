@@ -80,7 +80,7 @@ export default function TripsCard({ trips, setTrips }) {
 
   return (
     <>
-      <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 h-full flex flex-col">
+      <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 dashboard-card">
         <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-6">
           Your Trips
         </h2>
@@ -98,29 +98,33 @@ export default function TripsCard({ trips, setTrips }) {
             </button>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
-            <div className="grid gap-4 pr-1">
+          <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+            <div className="space-y-4">
               {trips.map((trip) => (
                 <div
                   key={trip.id}
                   onClick={() => handleTripClick(trip)}
-                  className="gap-2 bg-[var(--tw-field)] flex justify-between rounded-lg p-4 hover:bg-opacity-80 transition-colors cursor-pointer"
+                  className="bg-[var(--tw-field)] flex justify-between rounded-lg p-4 hover:bg-opacity-80 transition-colors cursor-pointer"
                 >
-                  <div className="flex flex-col justify-between">
-                    <h3 className="text-lg font-semibold text-[var(--tw-text)]">
+                  <div className="flex flex-col justify-between min-w-0 flex-1">
+                    <h3 className="text-lg font-semibold text-[var(--tw-text)] truncate">
                       {trip.name}
                     </h3>
-                    <span>{trip.destination}</span>
+                    <span className="text-[var(--tw-text)] opacity-70 text-sm truncate">
+                      {trip.type === "advanced"
+                        ? trip.arrivalCity?.formatted?.split(",")[0] ||
+                          "Advanced Trip"
+                        : trip.destination}
+                    </span>
                   </div>
-                  <div className="flex justify-end gap-6">
-                    <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-4 ml-4">
+                    <div className="flex flex-col items-end text-xs text-[var(--tw-text)] opacity-70">
                       <span>{formatDate(trip.startDate)}</span>
-                      <span>-</span>
                       <span>{formatDate(trip.endDate)}</span>
                     </div>
                     <button
                       onClick={(e) => handleDeleteClick(e, trip.id, trip.name)}
-                      className="text-red-400 cursor-pointer p-1 transition-colors"
+                      className="text-red-400 hover:text-red-300 cursor-pointer p-1 transition-colors flex-shrink-0"
                       title="Delete trip"
                     >
                       <Trash2 size={16} />

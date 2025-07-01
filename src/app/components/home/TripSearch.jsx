@@ -623,7 +623,7 @@ export default function TripSearch() {
                     ref={startDateBtnRef}
                     type="button"
                     variant="outline"
-                    className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
+                    className={`cursor-pointer w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
                       validationErrors.startDate
                         ? "border-red-500"
                         : "border-[var(--tw-border)] text-[var(--tw-text)]"
@@ -673,7 +673,7 @@ export default function TripSearch() {
                     ref={endDateBtnRef}
                     type="button"
                     variant="outline"
-                    className={`w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
+                    className={`cursor-pointer w-full px-4 py-2 justify-start text-left font-normal bg-[var(--tw-field)] border hover:bg-[var(--tw-field)] hover:text-[var(--tw-text)] ${
                       validationErrors.endDate
                         ? "border-red-500"
                         : "border-[var(--tw-border)] text-[var(--tw-text)]"

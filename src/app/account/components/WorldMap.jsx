@@ -63,6 +63,10 @@ export default function WorldMap({ trips, onTripClick }) {
   };
 
   const getCoordinatesFromTrip = (trip) => {
+    if (trip.type === "advanced" && trip.arrivalCity?.geometry) {
+      return [trip.arrivalCity.geometry.lat, trip.arrivalCity.geometry.lng];
+    }
+
     if (
       trip.locationDetails?.geometry?.lat &&
       trip.locationDetails?.geometry?.lng
@@ -72,7 +76,30 @@ export default function WorldMap({ trips, onTripClick }) {
         trip.locationDetails.geometry.lng,
       ];
     }
+
     return null;
+  };
+
+  const getDisplayName = (trip) => {
+    if (trip.type === "advanced") {
+      return (
+        trip.arrivalCity?.components?.city ||
+        trip.arrivalCity?.components?.town ||
+        trip.arrivalCity?.components?.village ||
+        trip.arrivalCity?.formatted?.split(",")[0] ||
+        trip.name
+      );
+    }
+
+    return trip.destination || trip.name;
+  };
+
+  const getDisplayLocation = (trip) => {
+    if (trip.type === "advanced") {
+      return trip.arrivalCity?.formatted || "Advanced Trip";
+    }
+
+    return trip.destination || "Trip Location";
   };
 
   if (!isClient || !leafletLoaded) {
@@ -117,7 +144,12 @@ export default function WorldMap({ trips, onTripClick }) {
               <Popup>
                 <div className="p-2 min-w-[200px]">
                   <h3 className="font-bold text-lg mb-2">{trip.name}</h3>
-                  <p className="text-sm mb-2">{trip.destination}</p>
+                  <p className="text-sm mb-2">{getDisplayLocation(trip)}</p>
+                  {trip.type === "advanced" && (
+                    <p className="text-xs text-gray-500 mb-2">
+                      {trip.isRoundTrip ? "Round Trip" : "Multi-City Trip"}
+                    </p>
+                  )}
                   <div className="text-xs text-gray-600 space-y-1">
                     <p>Start: {formatDate(trip.startDate)}</p>
                     <p>End: {formatDate(trip.endDate)}</p>

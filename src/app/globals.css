@@ -271,3 +271,33 @@ body {
   background: rgba(0, 0, 0, 0.7) !important;
   color: white !important;
 }
+
+.dashboard-card {
+  height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--tw-border) var(--tw-field);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--tw-field);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--tw-border);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--tw-focus);
+}

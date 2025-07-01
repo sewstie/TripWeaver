@@ -83,119 +83,123 @@ export default function ProfileCard() {
   };
 
   return (
-    <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 border-[var(--tw-border)]">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-[var(--tw-text)] flex items-center gap-2">
-          Profile Information
+    <div className="bg-[var(--tw-subbackground)] flex flex-col justify-between rounded-lg p-6 dashboard-card">
+      <div className="flex justify-between">
+        <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-6">
+          Profile
         </h2>
-        <div className="flex items-center gap-2">
-          {!isEditing ? (
-            <button
-              onClick={handleEditStart}
-              className="cursor-pointer flex items-center gap-2 px-5 py-1.5 text-sm bg-[var(--tw-focus)] text-white rounded-lg hover:opacity-90 transition-opacity"
-            >
-              <Edit2 className="h-4 w-4" />
-              Edit
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="cursor-pointer flex items-center gap-2 px-5 py-1.5 text-sm bg-[var(--tw-green)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <div className="w-12 h-8 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-              </button>
-              <button
-                onClick={handleEditCancel}
-                className="cursor-pointer flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-      {error && (
-        <div className="mb-4 p-3 bg-red-500 bg-opacity-10 border border-red-500 rounded-lg text-red-400 text-sm">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="mb-4 p-3 bg-green-500 bg-opacity-10 border-green-500 rounded-lg text-green-400 text-sm">
-          {success}
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-          <div className="flex items-center gap-3">
-            <User className="h-4 w-4" />
-            <span className="text-[var(--tw-text)] opacity-70">
-              Display Name
-            </span>
-          </div>
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            {isEditing ? (
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="px-3 py-1 bg-[var(--tw-field)] rounded text-[var(--tw-text)] text-sm focus:outline-none focus:border-[var(--tw-focus)]"
-              />
+            {!isEditing ? (
+              <button
+                onClick={handleEditStart}
+                className="cursor-pointer flex items-center gap-2 px-7 py-1.5 text-sm bg-[var(--tw-focus)] text-white rounded-lg hover:opacity-90 transition-opacity"
+              >
+                <Edit2 className="h-4 w-4" />
+                Edit
+              </button>
             ) : (
-              <span className="text-[var(--tw-text)] font-medium">
-                {getDisplayName()}
-              </span>
+              <>
+                <button
+                  onClick={handleSave}
+                  disabled={isLoading}
+                  className="cursor-pointer flex items-center gap-2 px-5 py-1.5 text-sm bg-[var(--tw-green)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {!isLoading && "Save"}
+                </button>
+                <button
+                  onClick={handleEditCancel}
+                  className="cursor-pointer flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </>
             )}
           </div>
         </div>
+      </div>
+      <div>
+        {error && (
+          <div className="mb-4 p-3 bg-red-500 bg-opacity-10 border border-red-500 rounded-lg text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-500 bg-opacity-10 border border-green-500 rounded-lg text-green-400 text-sm">
+            {success}
+          </div>
+        )}
 
-        <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-          <div className="flex items-center gap-3">
-            <Mail className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
-            <span className="text-[var(--tw-text)] opacity-70">
-              Email Address
+        <div className="space-y-4">
+          <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
+            <div className="flex items-center gap-3">
+              <User className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
+              <span className="text-[var(--tw-text)] opacity-70">
+                Display Name
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="px-3 py-1 bg-[var(--tw-field)] border border-[var(--tw-border)] rounded text-[var(--tw-text)] text-sm focus:outline-none focus:border-[var(--tw-focus)]"
+                />
+              ) : (
+                <span className="text-[var(--tw-text)] font-medium">
+                  {getDisplayName()}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
+            <div className="flex items-center gap-3">
+              <Mail className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
+              <span className="text-[var(--tw-text)] opacity-70">
+                Email Address
+              </span>
+            </div>
+            <span className="text-[var(--tw-text)] font-medium text-sm">
+              {currentUser?.email}
             </span>
           </div>
-          <span className="text-[var(--tw-text)] font-medium">
-            {currentUser?.email}
-          </span>
-        </div>
 
-        <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
-            <span className="text-[var(--tw-text)] opacity-70">
-              Member Since
+          <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
+              <span className="text-[var(--tw-text)] opacity-70">
+                Member Since
+              </span>
+            </div>
+            <span className="text-[var(--tw-text)] font-medium text-sm">
+              {formatDate(currentUser?.metadata?.creationTime)}
             </span>
           </div>
-          <span className="text-[var(--tw-text)] font-medium">
-            {formatDate(currentUser?.metadata?.creationTime)}
-          </span>
-        </div>
 
-        <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-          <div className="flex items-center gap-3">
-            <Shield className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
-            <span className="text-[var(--tw-text)] opacity-70">
-              Sign-in Method
+          <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
+            <div className="flex items-center gap-3">
+              <Shield className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
+              <span className="text-[var(--tw-text)] opacity-70">
+                Sign-in Method
+              </span>
+            </div>
+            <span className="text-[var(--tw-text)] font-medium text-sm">
+              {getProviderName()}
             </span>
           </div>
-          <span className="text-[var(--tw-text)] font-medium">
-            {getProviderName()}
-          </span>
         </div>
       </div>
-
-      <div className="mt-3 pt-6 flex-col space-y-6">
+      <div>
         <button
           onClick={logout}
-          className="cursor-pointer w-full px-4 py-2 border-[var(--tw-focus)] border text-white rounded-lg transition-colors font-semibold"
+          className="cursor-pointer w-full px-4 py-2 border border-[var(--tw-focus)] rounded-lg font-semibold"
         >
           Logout
         </button>

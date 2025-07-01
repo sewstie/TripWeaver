@@ -232,7 +232,7 @@ export default function AddCityModal({
       }}
     >
       <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
-      <div className="relative bg-[var(--tw-subbackground)] rounded-lg w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col z-10">
+      <div className="modal-content relative bg-[var(--tw-subbackground)] rounded-lg w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col z-10">
         <div className="flex justify-between items-center p-6 border-b border-[var(--tw-border)]">
           <h2 className="text-xl font-bold text-[var(--tw-text)]">
             {isEditing ? "Edit City" : "Add City to Visit"}
@@ -255,7 +255,7 @@ export default function AddCityModal({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="relative">
               <label className="block mb-2 font-medium text-[var(--tw-text)]">
                 City Name *
@@ -358,7 +358,7 @@ export default function AddCityModal({
               </p>
             </div>
 
-            <div>
+            <div className="mb-0">
               <label className="block mb-2 font-medium text-[var(--tw-text)]">
                 Notes (optional)
               </label>
