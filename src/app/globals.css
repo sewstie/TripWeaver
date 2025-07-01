@@ -301,3 +301,77 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--tw-focus);
 }
+
+.rdp {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.rdp-vhidden {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.rdp-head_row,
+.rdp-row {
+  display: flex;
+  gap: 2px;
+}
+
+.rdp-head_cell,
+.rdp-cell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rdp-head_cell {
+  height: 24px;
+  color: var(--tw-text);
+  opacity: 0.7;
+  font-size: 0.875rem;
+}
+
+.rdp-cell {
+  height: 36px;
+}
+
+.rdp-button {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tw-text);
+  background-color: transparent;
+  border: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: var(--tw-field);
+}
+
+.rdp-day_selected {
+  background-color: var(--tw-focus) !important;
+  color: white !important;
+}
+
+.rdp-day_today {
+  background-color: var(--tw-field);
+}
+
+.rdp-button[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

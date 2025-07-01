@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar } from "@/app/components/ui/calendar";
 import { Button } from "@/app/components/ui/button";
-import { CalendarIcon, MapPin, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { db, collection, addDoc, serverTimestamp } from "@/lib/firebase";
