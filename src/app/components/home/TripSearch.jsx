@@ -1,8 +1,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
-import { Calendar } from "@/app/components/ui/calendar";
-import { Button } from "@/app/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
 import { CalendarIcon, Loader2, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -649,7 +649,7 @@ export default function TripSearch() {
                   {startDateOpen && (
                     <div
                       ref={startCalendarRef}
-                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 max-w-[280px] overflow-hidden"
                     >
                       <Calendar
                         mode="single"
@@ -699,7 +699,7 @@ export default function TripSearch() {
                   {endDateOpen && (
                     <div
                       ref={endCalendarRef}
-                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 max-w-[280px] overflow-hidden"
                     >
                       <Calendar
                         mode="single"
@@ -884,7 +884,7 @@ export default function TripSearch() {
                   {startDateOpen && (
                     <div
                       ref={startCalendarRef}
-                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 max-w-[280px] overflow-hidden"
                     >
                       <Calendar
                         mode="single"
@@ -934,7 +934,7 @@ export default function TripSearch() {
                   {endDateOpen && (
                     <div
                       ref={endCalendarRef}
-                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-2 top-[calc(100%+5px)] left-0 w-full min-w-[280px]"
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 max-w-[280px] overflow-hidden"
                     >
                       <Calendar
                         mode="single"
