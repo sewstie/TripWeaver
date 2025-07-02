@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { format } from "date-fns";
 
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
@@ -56,10 +57,21 @@ export default function WorldMap({ trips, onTripClick }) {
 
   const formatDate = (date) => {
     if (!date) return "Not set";
-    if (date.toDate) {
-      return date.toDate().toLocaleDateString();
+
+    try {
+      if (date.toDate) {
+        date = date.toDate();
+      }
+
+      if (typeof date === "string") {
+        date = new Date(date);
+      }
+
+      return format(date, "d MMMM");
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return "Invalid date";
     }
-    return new Date(date).toLocaleDateString();
   };
 
   const getCoordinatesFromTrip = (trip) => {
@@ -143,23 +155,21 @@ export default function WorldMap({ trips, onTripClick }) {
             >
               <Popup>
                 <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-lg mb-2">{trip.name}</h3>
-                  <p className="text-sm mb-2">{getDisplayLocation(trip)}</p>
-                  {trip.type === "advanced" && (
-                    <p className="text-xs text-gray-500 mb-2">
-                      {trip.isRoundTrip ? "Round Trip" : "Multi-City Trip"}
+                  <h3 className="font-bold text-lg">{trip.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    {getDisplayLocation(trip)}
+                  </p>
+                  <div className="text-sm">
+                    <p>
+                      {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
                     </p>
-                  )}
-                  <div className="text-xs text-gray-600 space-y-1">
-                    <p>Start: {formatDate(trip.startDate)}</p>
-                    <p>End: {formatDate(trip.endDate)}</p>
                   </div>
                   {onTripClick && (
                     <button
                       onClick={(e) => {
                         onTripClick(trip);
                       }}
-                      className="cursor-pointer mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
+                      className="cursor-pointer rounded bg-[var(--tw-focus)] text-white px-3 py-1 w-full transition-colors"
                     >
                       View Trip
                     </button>

@@ -199,7 +199,7 @@ export default function ProfileCard() {
       <div>
         <button
           onClick={logout}
-          className="cursor-pointer w-full px-4 py-2 border border-[var(--tw-focus)] rounded-lg font-semibold"
+          className="cursor-pointer text-[var(--tw-text)] w-full px-4 py-2 border border-[var(--tw-focus)] rounded-lg"
         >
           Logout
         </button>

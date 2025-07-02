@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { db, deleteDoc, doc, getDoc } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import Confirmation from "@/app/components/Confirmation";
+import { format } from "date-fns";
 
 export default function TripsCard({ trips, setTrips }) {
   const { currentUser } = useAuth();
@@ -20,12 +21,51 @@ export default function TripsCard({ trips, setTrips }) {
   });
   const router = useRouter();
 
+  const getDateObject = (dateInput) => {
+    if (!dateInput) return new Date(0);
+
+    try {
+      if (dateInput.toDate) {
+        return dateInput.toDate();
+      }
+
+      if (typeof dateInput === "string") {
+        return new Date(dateInput);
+      }
+
+      return new Date(dateInput);
+    } catch (error) {
+      console.error("Date conversion error:", error);
+      return new Date(0);
+    }
+  };
+
+  const sortedTrips = useMemo(() => {
+    if (!trips || !trips.length) return [];
+
+    return [...trips].sort((a, b) => {
+      const dateA = getDateObject(a.startDate);
+      const dateB = getDateObject(b.startDate);
+      return dateA - dateB;
+    });
+  }, [trips]);
+
   const formatDate = (dateString) => {
     if (!dateString) return "Not set";
-    if (dateString.toDate) {
-      return dateString.toDate().toLocaleDateString();
+
+    try {
+      if (dateString.toDate) {
+        dateString = dateString.toDate();
+      }
+
+      if (typeof dateString === "string") {
+        dateString = new Date(dateString);
+      }
+      return format(dateString, "d MMMM");
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return "Not set";
     }
-    return new Date(dateString).toLocaleDateString();
   };
 
   const handleDeleteClick = (e, tripId, tripName) => {
@@ -85,7 +125,7 @@ export default function TripsCard({ trips, setTrips }) {
           Your Trips
         </h2>
 
-        {trips.length === 0 ? (
+        {sortedTrips.length === 0 ? (
           <div className="text-center py-8 flex-1 flex flex-col justify-center">
             <p className="text-[var(--tw-text)] opacity-70 mb-4">
               You haven't created any trips yet.
@@ -100,7 +140,7 @@ export default function TripsCard({ trips, setTrips }) {
         ) : (
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
             <div className="space-y-4">
-              {trips.map((trip) => (
+              {sortedTrips.map((trip) => (
                 <div
                   key={trip.id}
                   onClick={() => handleTripClick(trip)}
@@ -119,8 +159,10 @@ export default function TripsCard({ trips, setTrips }) {
                   </div>
                   <div className="flex items-center gap-4 ml-4">
                     <div className="flex flex-col items-end text-xs text-[var(--tw-text)] opacity-70">
-                      <span>{formatDate(trip.startDate)}</span>
-                      <span>{formatDate(trip.endDate)}</span>
+                      <span>
+                        {formatDate(trip.startDate)} -{" "}
+                        {formatDate(trip.endDate)}
+                      </span>
                     </div>
                     <button
                       onClick={(e) => handleDeleteClick(e, trip.id, trip.name)}
