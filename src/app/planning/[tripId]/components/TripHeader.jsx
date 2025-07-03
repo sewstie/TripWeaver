@@ -34,14 +34,15 @@ export default function TripHeader({ trip, onEdit, onManageAccess, onDelete }) {
   const getDestination = () => {
     if (trip?.arrivalCity) {
       return (
-        trip.arrivalCity.components?.city ||
-        trip.arrivalCity.components?.town ||
-        trip.arrivalCity.components?.village ||
-        trip.arrivalCity.formatted?.split(",")[0] ||
-        "Unknown Destination"
+        trip.arrivalCity.components?.country ||
+        (trip.arrivalCity.formatted
+          ? trip.arrivalCity.formatted.split(",").pop().trim()
+          : "Unknown Country")
       );
     }
-    return trip?.destination || "Unknown Destination";
+    return trip?.destination?.includes(",")
+      ? trip.destination.split(",").pop().trim()
+      : trip.destination || "Unknown Destination";
   };
 
   const isOwner = trip?.collaborators?.[currentUser?.uid] === "owner";

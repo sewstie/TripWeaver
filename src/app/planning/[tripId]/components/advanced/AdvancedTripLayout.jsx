@@ -14,7 +14,15 @@ import EditTripModal from "../EditTripModal";
 import ManageAccessModal from "../ManageAccessModal";
 import CitySetupCard from "./CitySetupCard";
 import AddCityModal from "./AddCityModal";
-import { Plus, MapPin, Calendar, Route, CheckCircle } from "lucide-react";
+import {
+  Plus,
+  MapPin,
+  Calendar,
+  Route,
+  CheckCircle,
+  ArrowLeft,
+} from "lucide-react";
+import CityPlanningView from "./CityPlanningView";
 
 export default function AdvancedTripLayout({
   trip,
@@ -35,6 +43,9 @@ export default function AdvancedTripLayout({
   const [editingCity, setEditingCity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [setupComplete, setSetupComplete] = useState(false);
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [mapPoints, setMapPoints] = useState([]);
+  const [selectedMapDay, setSelectedMapDay] = useState(0);
 
   useEffect(() => {
     const q = query(
@@ -65,7 +76,7 @@ export default function AdvancedTripLayout({
               duration: 1,
               order: -3,
               locationDetails: trip.arrivalCity,
-              notes: "Arrival in your home town",
+              notes: "Arrival from your home town",
             });
 
             allCities.push({
@@ -178,6 +189,97 @@ export default function AdvancedTripLayout({
   const handleEditCity = (city) => {
     setEditingCity(city);
   };
+
+  const handleCityClick = (city) => {
+    if (
+      city.isArrivalCity ||
+      city.isDepartureCity ||
+      city.isRoundTripArrival ||
+      city.isRoundTripDeparture
+    ) {
+      return;
+    }
+
+    setSelectedCity(city);
+  };
+
+  const handleBackToOverview = () => {
+    setSelectedCity(null);
+  };
+
+  const handleSightAdded = (newSight) => {
+    if (newSight.coordinates) {
+      setMapPoints((prev) => {
+        const existingIndex = prev.findIndex(
+          (point) => point.id === newSight.id
+        );
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            id: newSight.id,
+            name: newSight.name,
+            location: newSight.location,
+            coordinates: newSight.coordinates,
+            day: newSight.day,
+            notes: newSight.notes,
+            cityId: selectedCity?.id,
+          };
+          return updated;
+        } else {
+          return [
+            ...prev,
+            {
+              id: newSight.id,
+              name: newSight.name,
+              location: newSight.location,
+              coordinates: newSight.coordinates,
+              day: newSight.day,
+              notes: newSight.notes,
+              cityId: selectedCity?.id,
+            },
+          ];
+        }
+      });
+    }
+  };
+
+  const handleMapDayChange = (dayIndex) => {
+    setSelectedMapDay(dayIndex);
+  };
+
+  if (selectedCity) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={handleBackToOverview}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--tw-field)] text-[var(--tw-text)] rounded-lg hover:bg-opacity-80 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Trip Overview
+          </button>
+          <h2 className="text-2xl font-bold text-[var(--tw-text)]">
+            Planning {selectedCity.name} • {selectedCity.duration}{" "}
+            {selectedCity.duration === 1 ? "day" : "days"}
+          </h2>
+        </div>
+
+        <CityPlanningView
+          city={selectedCity}
+          tripId={tripId}
+          userRole={userRole}
+          canEdit={canEdit}
+          trip={trip}
+          mapPoints={mapPoints.filter(
+            (point) => point.cityId === selectedCity.id
+          )}
+          selectedMapDay={selectedMapDay}
+          onMapDayChange={handleMapDayChange}
+          handleSightAdded={handleSightAdded}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -351,6 +453,7 @@ export default function AdvancedTripLayout({
                 totalTrip={trip}
                 availableDays={getAvailableDays()}
                 onEditCity={handleEditCity}
+                onCityClick={handleCityClick}
               />
             ))}
           </div>

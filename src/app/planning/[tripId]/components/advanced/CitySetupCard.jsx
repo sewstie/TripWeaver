@@ -19,6 +19,7 @@ export default function CitySetupCard({
   totalTrip,
   availableDays,
   onEditCity,
+  onCityClick,
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -64,7 +65,16 @@ export default function CitySetupCard({
             : city.isDepartureCity || city.isRoundTripDeparture
             ? "border-red-500"
             : "border-[var(--tw-focus)]"
+        } ${
+          !isSpecialCity
+            ? "cursor-pointer hover:bg-opacity-90 transition-colors"
+            : ""
         }`}
+        onClick={() => {
+          if (!isSpecialCity && onCityClick) {
+            onCityClick(city);
+          }
+        }}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
