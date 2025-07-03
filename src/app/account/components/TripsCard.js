@@ -152,8 +152,14 @@ export default function TripsCard({ trips, setTrips }) {
                     </h3>
                     <span className="text-[var(--tw-text)] opacity-70 text-sm truncate">
                       {trip.type === "advanced"
-                        ? trip.arrivalCity?.formatted?.split(",")[0] ||
-                          "Advanced Trip"
+                        ? trip.arrivalCity?.formatted
+                          ? trip.arrivalCity.formatted
+                              .split(",")
+                              .pop()
+                              .trim() || "Advanced Trip"
+                          : "Advanced Trip"
+                        : trip.destination?.includes(",")
+                        ? trip.destination.split(",").pop().trim()
                         : trip.destination}
                     </span>
                   </div>
