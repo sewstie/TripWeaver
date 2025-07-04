@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Calendar, Map } from "lucide-react";
+import { Calendar, Map, ArrowLeft } from "lucide-react";
 import DaySchedule from "../DaySchedule";
 import dynamic from "next/dynamic";
 
@@ -16,8 +16,13 @@ export default function CityPlanningView({
   selectedMapDay,
   onMapDayChange,
   handleSightAdded,
+  handleBackToOverview,
 }) {
   const [viewMode, setViewMode] = useState("schedule");
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const generateCityDays = () => {
     if (!trip?.startDate) return [];
@@ -83,7 +88,7 @@ export default function CityPlanningView({
             className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
               viewMode === "schedule"
                 ? "bg-[var(--tw-focus)] text-white"
-                : "text-[var(--tw-text)] hover:bg-[var(--tw-subbackground)]"
+                : "text-[var(--tw-text)] hover:bg-[var(--tw-field)]"
             }`}
           >
             <Calendar className="w-4 h-4" />
@@ -94,7 +99,7 @@ export default function CityPlanningView({
             className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
               viewMode === "map"
                 ? "bg-[var(--tw-focus)] text-white"
-                : "text-[var(--tw-text)] hover:bg-[var(--tw-subbackground)]"
+                : "text-[var(--tw-text)] hover:bg-[var(--tw-field)]"
             }`}
           >
             <Map className="w-4 h-4" />
@@ -105,10 +110,6 @@ export default function CityPlanningView({
 
       {viewMode === "schedule" ? (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
-            Day-by-Day Schedule in {city.name}
-          </h2>
-
           {days.length === 0 ? (
             <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
               <p className="text-[var(--tw-text)] opacity-70">
@@ -141,6 +142,7 @@ export default function CityPlanningView({
             selectedDay={selectedMapDay}
             onDayChange={onMapDayChange}
             availableDays={days}
+            city={city}
           />
         </div>
       )}

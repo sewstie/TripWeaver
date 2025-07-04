@@ -2,14 +2,7 @@
 import { useState } from "react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import {
-  MapPin,
-  Edit,
-  Trash2,
-  Clock,
-  StickyNote,
-  GripVertical,
-} from "lucide-react";
+import { Edit, Trash2, Calendar, Clock, StickyNote } from "lucide-react";
 import Confirmation from "@/app/components/Confirmation";
 
 export default function CitySetupCard({
@@ -65,124 +58,86 @@ export default function CitySetupCard({
             : city.isDepartureCity || city.isRoundTripDeparture
             ? "border-red-500"
             : "border-[var(--tw-focus)]"
-        } ${
-          !isSpecialCity
-            ? "cursor-pointer hover:bg-opacity-90 transition-colors"
-            : ""
         }`}
-        onClick={() => {
-          if (!isSpecialCity && onCityClick) {
-            onCityClick(city);
-          }
-        }}
       >
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3 flex-1">
-            {canEdit &&
-              !city.isArrivalCity &&
-              !city.isDepartureCity &&
-              !city.isRoundTripArrival &&
-              !city.isRoundTripDeparture && (
-                <div className="cursor-grab active:cursor-grabbing p-1 hover:bg-[var(--tw-field)] rounded transition-colors mt-1">
-                  <GripVertical className="w-4 h-4 text-[var(--tw-text)] opacity-40" />
-                </div>
-              )}
-
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin
-                  className={`w-5 h-5 ${
-                    city.isArrivalCity || city.isRoundTripArrival
-                      ? "text-green-500"
-                      : city.isDepartureCity || city.isRoundTripDeparture
-                      ? "text-red-500"
-                      : "text-[var(--tw-focus)]"
-                  }`}
-                />
-                <h3 className="text-lg font-semibold text-[var(--tw-text)]">
-                  {city.name}
-                </h3>
-                {city.isArrivalCity && (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-xs rounded-full">
-                    Arrival
-                  </span>
-                )}
-                {city.isDepartureCity && (
-                  <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-xs rounded-full">
-                    Departure
-                  </span>
-                )}
-                {city.isRoundTripArrival && (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-xs rounded-full">
-                    Arrival Day
-                  </span>
-                )}
-                {city.isRoundTripDeparture && (
-                  <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-xs rounded-full">
-                    Departure Day
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 mb-3">
-                <Clock className="w-4 h-4 text-[var(--tw-text)] opacity-60" />
-                <span className="text-[var(--tw-text)] opacity-80">
-                  {city.isArrivalCity || city.isDepartureCity
-                    ? "Transit city"
-                    : isRoundTripCity
-                    ? `${city.duration || 1} ${
-                        (city.duration || 1) === 1 ? "day" : "days"
-                      } ${
-                        city.isRoundTripArrival ? "(arrival)" : "(departure)"
-                      }`
-                    : `${city.duration || 1} ${
-                        (city.duration || 1) === 1 ? "day" : "days"
-                      }`}
+        <div className="flex justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-[var(--tw-text)]">
+                {city.name}
+              </h3>
+            </div>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="flex items-center gap-1 text-sm text-[var(--tw-text)] opacity-70">
+                <Clock className="w-4 h-4" />
+                <span>
+                  {city.duration} day{city.duration !== 1 ? "s" : ""}
                 </span>
               </div>
-
               {city.notes && (
-                <div className="flex items-start gap-2 mb-3">
-                  <StickyNote className="w-4 h-4 text-[var(--tw-text)] opacity-60 mt-0.5 flex-shrink-0" />
-                  <p className="text-[var(--tw-text)] opacity-80 text-sm">
-                    {city.notes}
-                  </p>
+                <div className="flex items-center gap-1 text-sm text-[var(--tw-text)] opacity-70">
+                  <StickyNote className="w-4 h-4" />
+                  <span className="truncate max-w-96">{city.notes}</span>
                 </div>
               )}
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onCityClick(city)}
+              className="cursor-pointer border border-[var(--tw-focus)] text-white px-6 py-1.5 rounded-lg transition-colors text-sm flex items-center gap-1"
+              title="Plan day by day"
+            >
+              <Calendar className="w-4 h-4" />
+              Plan
+            </button>
 
-          {canEdit && canEditThisCity && (
-            <div className="flex gap-1">
+            {canEditThisCity && canEdit && (
               <button
                 onClick={() => onEditCity(city)}
-                className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded transition-colors"
+                className="cursor-pointer text-[var(--tw-text)] opacity-70 hover:opacity-100 p-1"
                 title="Edit city"
               >
-                <Edit className="w-4 h-4 text-[var(--tw-text)] opacity-60" />
+                <Edit className="w-4 h-4" />
               </button>
-              {!isRoundTripCity && (
-                <button
-                  onClick={() => setShowConfirm(true)}
-                  className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded transition-colors"
-                  title="Remove city"
-                >
-                  <Trash2 className="w-4 h-4 text-red-500 opacity-60" />
-                </button>
-              )}
-            </div>
-          )}
+            )}
+
+            {canEdit && (
+              <button
+                onClick={isSpecialCity ? () => {} : () => setShowConfirm(true)}
+                className={`cursor-${
+                  isSpecialCity ? "not-allowed" : "pointer"
+                } p-1
+                  ${
+                    isSpecialCity
+                      ? "text-red-400 dark:text-gray-600"
+                      : "text-red-400 hover:text-red-300"
+                  }`}
+                title={
+                  isSpecialCity
+                    ? `${
+                        city.isArrivalCity || city.isRoundTripArrival
+                          ? "Arrival"
+                          : "Departure"
+                      } cities cannot be removed`
+                    : "Delete city"
+                }
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {!isRoundTripCity && !city.isArrivalCity && !city.isDepartureCity && (
+      {showConfirm && (
         <Confirmation
           isOpen={showConfirm}
           onClose={() => setShowConfirm(false)}
           onConfirm={handleDelete}
-          title="Remove City"
-          message={`Are you sure you want to remove "${city.name}" from your trip? This action cannot be undone.`}
-          confirmText="Remove"
+          title="Delete City"
+          message={`Are you sure you want to delete ${city.name} from your trip? This action cannot be undone.`}
+          confirmText="Delete"
           cancelText="Cancel"
           type="danger"
         />

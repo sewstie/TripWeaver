@@ -9,6 +9,7 @@ export default function TripMap({
   selectedDay = 0,
   onDayChange,
   availableDays = [],
+  city = null,
 }) {
   const [isClient, setIsClient] = useState(false);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
@@ -54,6 +55,20 @@ export default function TripMap({
   const currentDayPoints = getDayMapPoints(selectedDay);
 
   const getMapCenter = () => {
+    if (city?.locationDetails?.geometry) {
+      return [
+        city.locationDetails.geometry.lat,
+        city.locationDetails.geometry.lng,
+      ];
+    }
+
+    if (city?.name && currentDayPoints.length > 0) {
+      return [
+        currentDayPoints[0].coordinates.lat,
+        currentDayPoints[0].coordinates.lng,
+      ];
+    }
+
     if (trip?.locationDetails?.geometry) {
       return [
         trip.locationDetails.geometry.lat,
@@ -69,6 +84,9 @@ export default function TripMap({
   };
 
   const getMapZoom = () => {
+    if (city) {
+      return 13;
+    }
     return 12;
   };
 
@@ -125,10 +143,10 @@ export default function TripMap({
             <button
               onClick={handlePreviousDay}
               disabled={!canGoPrevious()}
-              className={`cursor-pointer p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-colors ${
                 canGoPrevious()
-                  ? "bg-[var(--tw-field)] hover:bg-[var(--tw-subbackground)] text-[var(--tw-text)]"
-                  : "bg-[var(--tw-field)] opacity-50 cursor-not-allowed text-[var(--tw-text)]"
+                  ? "bg-[var(--tw-field)] cursor-pointer hover:bg-[var(--tw-subbackground)] text-[var(--tw-text)]"
+                  : "bg-[var(--tw-field)] cursor-not-allowed opacity-50 text-[var(--tw-text)]"
               }`}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -143,10 +161,10 @@ export default function TripMap({
             <button
               onClick={handleNextDay}
               disabled={!canGoNext()}
-              className={`cursor-pointer p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-colors ${
                 canGoNext()
-                  ? "bg-[var(--tw-field)] hover:bg-[var(--tw-subbackground)] text-[var(--tw-text)]"
-                  : "bg-[var(--tw-field)] opacity-50 cursor-not-allowed text-[var(--tw-text)]"
+                  ? "bg-[var(--tw-field)] cursor-pointer hover:bg-[var(--tw-subbackground)] text-[var(--tw-text)]"
+                  : "bg-[var(--tw-field)] cursor-not-allowed opacity-50 text-[var(--tw-text)]"
               }`}
             >
               <ChevronRight className="w-4 h-4" />

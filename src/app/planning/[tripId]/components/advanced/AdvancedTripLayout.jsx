@@ -98,7 +98,7 @@ export default function AdvancedTripLayout({
               id: "arrival-city",
               name: arrivalCityName,
               isArrivalCity: true,
-              duration: 0,
+              duration: 1,
               order: -2,
               locationDetails: trip.arrivalCity,
               notes: "Your arrival city",
@@ -114,7 +114,7 @@ export default function AdvancedTripLayout({
               id: "departure-city",
               name: departureCityName,
               isDepartureCity: true,
-              duration: 0,
+              duration: 1,
               order: 1000,
               locationDetails: trip.departureCity,
               notes: "Your departure city",
@@ -191,15 +191,7 @@ export default function AdvancedTripLayout({
   };
 
   const handleCityClick = (city) => {
-    if (
-      city.isArrivalCity ||
-      city.isDepartureCity ||
-      city.isRoundTripArrival ||
-      city.isRoundTripDeparture
-    ) {
-      return;
-    }
-
+    window.scrollTo(0, 0);
     setSelectedCity(city);
   };
 
@@ -250,10 +242,10 @@ export default function AdvancedTripLayout({
   if (selectedCity) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-4">
           <button
             onClick={handleBackToOverview}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--tw-field)] text-[var(--tw-text)] rounded-lg hover:bg-opacity-80 transition-colors"
+            className="cursor-pointer flex items-center gap-2 px-4 py-2 border border-[var(--tw-focus)] text-[var(--tw-text)] rounded-lg hover:bg-opacity-80 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Trip Overview
@@ -261,6 +253,10 @@ export default function AdvancedTripLayout({
           <h2 className="text-2xl font-bold text-[var(--tw-text)]">
             Planning {selectedCity.name} • {selectedCity.duration}{" "}
             {selectedCity.duration === 1 ? "day" : "days"}
+            {selectedCity.isArrivalCity && " • Arrival Day"}
+            {selectedCity.isDepartureCity && " • Departure Day"}
+            {selectedCity.isRoundTripArrival && " • Arrival"}
+            {selectedCity.isRoundTripDeparture && " • Departure"}
           </h2>
         </div>
 
@@ -276,6 +272,7 @@ export default function AdvancedTripLayout({
           selectedMapDay={selectedMapDay}
           onMapDayChange={handleMapDayChange}
           handleSightAdded={handleSightAdded}
+          handleBackToOverview={handleBackToOverview}
         />
       </div>
     );
@@ -404,14 +401,14 @@ export default function AdvancedTripLayout({
       </div>
 
       <div className="custom-vertical-spacing">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-[var(--tw-text)]">
             Cities & Duration
           </h3>
           {canEdit && (
             <button
               onClick={() => setIsAddCityModalOpen(true)}
-              className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2"
+              className="cursor-pointer bg-[var(--tw-focus)] text-white px-8 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Add City
