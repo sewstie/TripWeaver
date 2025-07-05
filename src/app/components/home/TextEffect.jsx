@@ -7,7 +7,7 @@ export default function TextEffect() {
   return (
     <div className="absolute top-0 left-0 flex items-center justify-center h-screen w-full pointer-events-none">
       <h1
-        className="text-[10rem] md:text-[12rem] font-bold text-center px-4 mix-blend-difference font-nunito tracking-wider text-[var(--tw-text)]"
+        className="text-[3.5rem] sm:text-[6rem] md:text-[8rem] lg:text-[10rem] xl:text-[12rem] font-bold text-center px-4 mix-blend-difference font-nunito tracking-wider text-[var(--tw-text)]"
         style={{
           textShadow: "0px 2px 10px rgba(0, 0, 0, 0.5)",
           fontFamily: "var(--font-nunito)",
@@ -16,7 +16,7 @@ export default function TextEffect() {
         }}
       >
         EXPLORE
-        <br />
+        <br className="block" />
         WONDERS
       </h1>
     </div>

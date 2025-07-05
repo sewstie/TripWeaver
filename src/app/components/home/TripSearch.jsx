@@ -527,11 +527,11 @@ export default function TripSearch() {
     >
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-[var(--tw-text)]">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 text-[var(--tw-text)]">
             Discover{" "}
             <span className="text-[var(--tw-focus)]">Your Next Adventure</span>
           </h2>
-          <p className="text-xl opacity-90 mb-8 text-[var(--tw-text)]">
+          <p className="text-lg md:text-xl opacity-90 mb-6 md:mb-8 text-[var(--tw-text)]">
             From ancient wonders to modern marvels, find the perfect destination
             for your journey. Search, plan, and embark on an unforgettable
             experience with{" "}
@@ -539,12 +539,12 @@ export default function TripSearch() {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto mb-8">
-          <div className="flex justify-center gap-4">
+        <div className="max-w-4xl mx-auto mb-6 md:mb-8">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-4">
             <button
               type="button"
               onClick={() => handleTripTypeChange("simple")}
-              className={`cursor-pointer w-40 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+              className={`cursor-pointer w-full sm:w-40 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition-all duration-300 ${
                 tripType === "simple"
                   ? "bg-[var(--tw-focus)] text-white"
                   : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] hover:bg-opacity-80"
@@ -555,7 +555,7 @@ export default function TripSearch() {
             <button
               type="button"
               onClick={() => handleTripTypeChange("advanced")}
-              className={`cursor-pointer w-40 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+              className={`cursor-pointer w-full sm:w-40 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition-all duration-300 ${
                 tripType === "advanced"
                   ? "bg-[var(--tw-focus)] text-white"
                   : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] hover:bg-opacity-80"
@@ -576,7 +576,7 @@ export default function TripSearch() {
 
         <form
           onSubmit={handleSubmit}
-          className="max-w-4xl mx-auto bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm rounded-xl p-6 md:p-8 shadow-xl relative z-5"
+          className="bg-[var(--tw-subbackground)] max-w-4xl mx-auto rounded-2xl p-4 md:p-8 shadow-lg relative"
         >
           {tripType === "simple" ? (
             <div className="flex flex-col gap-6 mb-6">
@@ -649,7 +649,7 @@ export default function TripSearch() {
                   {startDateOpen && (
                     <div
                       ref={startCalendarRef}
-                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 max-w-[280px] overflow-hidden"
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 right-0 sm:right-auto max-w-full sm:max-w-[280px] overflow-hidden"
                     >
                       <Calendar
                         mode="single"
@@ -659,7 +659,7 @@ export default function TripSearch() {
                           setStartDateOpen(false);
                         }}
                         disabled={(date) => date < new Date()}
-                        className="text-[var(--tw-text)]"
+                        className="text-[var(--tw-text)] w-full"
                       />
                     </div>
                   )}
@@ -699,7 +699,7 @@ export default function TripSearch() {
                   {endDateOpen && (
                     <div
                       ref={endCalendarRef}
-                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 max-w-[280px] overflow-hidden"
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 right-0 sm:right-auto max-w-full sm:max-w-[280px] overflow-hidden"
                     >
                       <Calendar
                         mode="single"
@@ -714,7 +714,7 @@ export default function TripSearch() {
                             ? date < currentData.startDate
                             : false)
                         }
-                        className="text-[var(--tw-text)]"
+                        className="text-[var(--tw-text)] w-full"
                       />
                     </div>
                   )}
@@ -733,8 +733,8 @@ export default function TripSearch() {
             </div>
           ) : (
             <div className="flex flex-col gap-6 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="w-full relative">
                   <label className="block mb-2 font-medium text-[var(--tw-text)]">
                     Arrival City
                   </label>
@@ -765,7 +765,7 @@ export default function TripSearch() {
                   )}
                 </div>
 
-                <div className="relative">
+                <div className="w-full relative">
                   <label className="block mb-2 font-medium text-[var(--tw-text)]">
                     Departure City
                   </label>
@@ -884,7 +884,7 @@ export default function TripSearch() {
                   {startDateOpen && (
                     <div
                       ref={startCalendarRef}
-                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 max-w-[280px] overflow-hidden"
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 right-0 sm:right-auto max-w-full sm:max-w-[280px] overflow-hidden"
                     >
                       <Calendar
                         mode="single"
@@ -894,7 +894,7 @@ export default function TripSearch() {
                           setStartDateOpen(false);
                         }}
                         disabled={(date) => date < new Date()}
-                        className="text-[var(--tw-text)]"
+                        className="text-[var(--tw-text)] w-full"
                       />
                     </div>
                   )}
@@ -934,7 +934,7 @@ export default function TripSearch() {
                   {endDateOpen && (
                     <div
                       ref={endCalendarRef}
-                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 max-w-[280px] overflow-hidden"
+                      className="absolute z-[200] bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-md shadow-lg p-1 top-[calc(100%+5px)] left-0 right-0 sm:right-auto max-w-full sm:max-w-[280px] overflow-hidden"
                     >
                       <Calendar
                         mode="single"
@@ -949,7 +949,7 @@ export default function TripSearch() {
                             ? date < currentData.startDate
                             : false)
                         }
-                        className="text-[var(--tw-text)]"
+                        className="text-[var(--tw-text)] w-full"
                       />
                     </div>
                   )}

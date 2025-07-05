@@ -10,11 +10,11 @@ export default function ScrollIndicator() {
   };
 
   return (
-    <div 
-      className="absolute bottom-8 left-0 right-0 flex flex-row items-center justify-center cursor-pointer transition-opacity duration-300 hover:opacity-80 text-[var(--tw-focus)]"
+    <div
+      className="absolute bottom-8 left-0 right-0 flex flex-row items-center justify-center cursor-pointer transition-opacity duration-300 hover:opacity-80 text-[var(--tw-focus)] touch-action-manipulation"
       onClick={scrollToNextSection}
     >
-      <span className="font-light">scroll down</span>
+      <span className="font-light text-sm sm:text-base">scroll down</span>
       <span className="transform rotate-180 ml-2">^</span>
     </div>
   );

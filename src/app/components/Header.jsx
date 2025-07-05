@@ -2,12 +2,14 @@
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
-import { User } from "lucide-react";
+import { User, Menu, X } from "lucide-react";
+import { useState } from "react";
 
 export default function Header() {
   const { currentUser, getUserName, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollToNextSection = () => {
     const viewportHeight = window.innerHeight;
@@ -15,6 +17,7 @@ export default function Header() {
       top: viewportHeight,
       behavior: "smooth",
     });
+    setMobileMenuOpen(false);
   };
 
   const handleExploreClick = () => {
@@ -23,6 +26,7 @@ export default function Header() {
     } else {
       router.push("/");
     }
+    setMobileMenuOpen(false);
   };
 
   const getDisplayName = () => {
@@ -33,19 +37,25 @@ export default function Header() {
     return currentUser.email?.split("@")[0];
   };
 
+  const handleLogout = () => {
+    setMobileMenuOpen(false);
+    logout();
+  };
+
   return (
     <header
       className="absolute top-0 left-0 right-0 z-50 py-4"
       style={{ backgroundColor: "transparent" }}
     >
-      <div className="container mx-auto px-6 flex justify-between items-center">
+      <div className="container mx-auto px-4 sm:px-6 flex justify-between items-center">
         <Link
           href="/"
-          className="text-2xl font-bold z-10 text-[var(--tw-text)]"
+          className="text-xl sm:text-2xl font-bold z-10 text-[var(--tw-text)]"
         >
           TripWeaver
         </Link>
-        <div className="flex items-center gap-2">
+
+        <div className="hidden md:flex items-center gap-2">
           {currentUser ? (
             <div className="flex items-center gap-2">
               <Link
@@ -58,7 +68,7 @@ export default function Header() {
                 <User className="h-4 w-4 text-[var(--tw-text)]" />
               </Link>
               <button
-                className="cursor-pointer px-5 py-2 rounded-full border border-[var(--tw-focus)] text-[var(--tw-text)] transition-all duration-300 hover:bg-opacity-20 z-10 "
+                className="cursor-pointer px-5 py-2 rounded-full border border-[var(--tw-focus)] text-[var(--tw-text)] transition-all duration-300 hover:bg-opacity-20 z-10"
                 onClick={logout}
                 style={{ backgroundColor: "transparent" }}
               >
@@ -83,6 +93,75 @@ export default function Header() {
             </>
           )}
         </div>
+
+        <button
+          className="md:hidden z-10 p-2 rounded-full bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? (
+            <X className="h-5 w-5 text-[var(--tw-text)]" />
+          ) : (
+            <Menu className="h-5 w-5 text-[var(--tw-text)]" />
+          )}
+        </button>
+
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex md:hidden">
+            <div className="absolute right-0 top-0 h-full w-64 bg-[var(--tw-background)] p-5 flex flex-col">
+              <div className="flex justify-end mb-8">
+                <button onClick={() => setMobileMenuOpen(false)}>
+                  <X className="h-6 w-6 text-[var(--tw-text)]" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {currentUser ? (
+                  <>
+                    <Link
+                      href="/account"
+                      className="flex items-center gap-2 px-4 py-3 rounded-lg bg-[var(--tw-subbackground)]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <User className="h-5 w-5 text-[var(--tw-focus)]" />
+                      <span className="text-[var(--tw-text)]">
+                        {getDisplayName()}
+                      </span>
+                    </Link>
+                    <Link
+                      href="/trips"
+                      className="px-4 py-3 text-[var(--tw-text)]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      My Trips
+                    </Link>
+                    <button
+                      className="cursor-pointer mt-auto px-4 py-3 rounded-lg border border-[var(--tw-focus)] text-[var(--tw-text)]"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="px-4 py-3 rounded-lg bg-[var(--tw-subbackground)] text-[var(--tw-text)]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <button
+                      onClick={handleExploreClick}
+                      className="cursor-pointer px-4 py-3 rounded-lg border border-[var(--tw-focus)] text-[var(--tw-text)]"
+                    >
+                      Explore
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

@@ -22,6 +22,9 @@ export function SliderProvider({ children }) {
   const [animationState, setAnimationState] = useState("entering");
   const [nextIndex, setNextIndex] = useState(null);
   const isFirstEffectRun = useRef(true);
+  const isMobile = useRef(
+    typeof window !== "undefined" && window.innerWidth < 640
+  );
 
   useEffect(() => {
     const timers = [];
@@ -35,7 +38,13 @@ export function SliderProvider({ children }) {
       setAnimationState("visible");
     }
 
-    const enteringDuration = currentImageStartedAsEntering ? 1000 : 0;
+    const enteringDuration = currentImageStartedAsEntering
+      ? isMobile.current
+        ? 800
+        : 1000
+      : 0;
+    const visibleDuration = isMobile.current ? 2000 : 2500;
+    const exitingDuration = isMobile.current ? 800 : 1000;
 
     const scheduleExitTimer = setTimeout(() => {
       if (currentImageStartedAsEntering) {
@@ -45,7 +54,7 @@ export function SliderProvider({ children }) {
         setAnimationState("exiting");
         const next = (currentIndex + 1) % images.length;
         setNextIndex(next);
-      }, 2500);
+      }, visibleDuration);
       timers.push(toExitingTimer);
     }, enteringDuration);
     timers.push(scheduleExitTimer);
@@ -54,7 +63,7 @@ export function SliderProvider({ children }) {
       const newCurrentIndex = (currentIndex + 1) % images.length;
       setCurrentIndex(newCurrentIndex);
       setNextIndex(null);
-    }, enteringDuration + 2500 + 1000);
+    }, enteringDuration + visibleDuration + exitingDuration);
     timers.push(advanceToNextImageTimer);
 
     return () => {
