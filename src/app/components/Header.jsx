@@ -3,13 +3,39 @@ import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { User, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Header() {
   const { currentUser, getUserName, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if device is mobile on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Check on initial load
+    checkMobile();
+
+    // Add event listener
+    window.addEventListener("resize", checkMobile);
+
+    // Prevent body scrolling when menu is open
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   const scrollToNextSection = () => {
     const viewportHeight = window.innerHeight;
@@ -97,6 +123,7 @@ export default function Header() {
         <button
           className="md:hidden z-10 p-2 rounded-full bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
         >
           {mobileMenuOpen ? (
             <X className="h-5 w-5 text-[var(--tw-text)]" />
@@ -105,60 +132,100 @@ export default function Header() {
           )}
         </button>
 
+        {/* Full screen mobile menu */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex md:hidden">
-            <div className="absolute right-0 top-0 h-full w-64 bg-[var(--tw-background)] p-5 flex flex-col">
-              <div className="flex justify-end mb-8">
-                <button onClick={() => setMobileMenuOpen(false)}>
-                  <X className="h-6 w-6 text-[var(--tw-text)]" />
-                </button>
-              </div>
+          <div className="fixed inset-0 bg-[var(--tw-background)] z-40 md:hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-[var(--tw-border)] border-opacity-20">
+              <span className="text-xl font-bold text-[var(--tw-text)]">
+                TripWeaver
+              </span>
+              <button onClick={() => setMobileMenuOpen(false)}>
+                <X className="h-6 w-6 text-[var(--tw-text)]" />
+              </button>
+            </div>
 
-              <div className="flex flex-col gap-4">
-                {currentUser ? (
-                  <>
+            <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+              {currentUser ? (
+                <>
+                  <div className="flex items-center gap-3 p-4 mb-6 bg-[var(--tw-subbackground)] rounded-lg">
+                    <div className="h-12 w-12 rounded-full bg-[var(--tw-field)] flex items-center justify-center">
+                      <User className="h-6 w-6 text-[var(--tw-focus)]" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-[var(--tw-text)]">
+                        {getDisplayName()}
+                      </p>
+                      <p className="text-sm text-[var(--tw-text)] opacity-70">
+                        {currentUser.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <nav className="space-y-1 mb-8">
                     <Link
                       href="/account"
-                      className="flex items-center gap-2 px-4 py-3 rounded-lg bg-[var(--tw-subbackground)]"
+                      className="block py-3 px-4 text-[var(--tw-text)] font-medium rounded-lg hover:bg-[var(--tw-subbackground)]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <User className="h-5 w-5 text-[var(--tw-focus)]" />
-                      <span className="text-[var(--tw-text)]">
-                        {getDisplayName()}
-                      </span>
+                      My Account
+                    </Link>
+                    <Link
+                      href="/"
+                      className="block py-3 px-4 text-[var(--tw-text)] font-medium rounded-lg hover:bg-[var(--tw-subbackground)]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Home
                     </Link>
                     <Link
                       href="/trips"
-                      className="px-4 py-3 text-[var(--tw-text)]"
+                      className="block py-3 px-4 text-[var(--tw-text)] font-medium rounded-lg hover:bg-[var(--tw-subbackground)]"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       My Trips
                     </Link>
+                  </nav>
+
+                  <div className="mt-auto">
                     <button
-                      className="cursor-pointer mt-auto px-4 py-3 rounded-lg border border-[var(--tw-focus)] text-[var(--tw-text)]"
+                      className="w-full py-3 px-4 rounded-lg bg-[var(--tw-focus)] text-white font-medium"
                       onClick={handleLogout}
                     >
                       Logout
                     </button>
-                  </>
-                ) : (
-                  <>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-4 mt-6">
                     <Link
                       href="/login"
-                      className="px-4 py-3 rounded-lg bg-[var(--tw-subbackground)] text-[var(--tw-text)]"
+                      className="block w-full py-3 text-center rounded-lg bg-[var(--tw-focus)] text-white font-medium"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Login
                     </Link>
+                    <Link
+                      href="/signup"
+                      className="block w-full py-3 text-center rounded-lg border border-[var(--tw-focus)] text-[var(--tw-text)] font-medium"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
                     <button
                       onClick={handleExploreClick}
-                      className="cursor-pointer px-4 py-3 rounded-lg border border-[var(--tw-focus)] text-[var(--tw-text)]"
+                      className="block w-full py-3 text-center rounded-lg bg-[var(--tw-subbackground)] text-[var(--tw-text)] font-medium mt-4"
                     >
                       Explore
                     </button>
-                  </>
-                )}
-              </div>
+                  </div>
+
+                  <div className="mt-auto pt-6 border-t border-[var(--tw-border)] border-opacity-20">
+                    <p className="text-sm text-center text-[var(--tw-text)] opacity-70">
+                      Create an account to plan your travels with TripWeaver
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

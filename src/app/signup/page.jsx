@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Loader2, Mail, Lock, User, Eye, EyeOff, Github } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -22,8 +22,27 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState("");
-  const { signup, signInWithGoogle, signInWithGithub } = useAuth();
+  const { signup, signInWithGoogle, signInWithGithub, isMobile } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    const metaViewport = document.querySelector("meta[name=viewport]");
+    if (!metaViewport) {
+      const meta = document.createElement("meta");
+      meta.name = "viewport";
+      meta.content = "width=device-width, initial-scale=1, maximum-scale=1";
+      document.head.appendChild(meta);
+    } else {
+      metaViewport.content =
+        "width=device-width, initial-scale=1, maximum-scale=1";
+    }
+
+    return () => {
+      if (metaViewport) {
+        metaViewport.content = "width=device-width, initial-scale=1";
+      }
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -105,7 +124,9 @@ export default function Signup() {
     setAuthError("");
     try {
       await signInWithGoogle();
-      router.push("/");
+      if (!isMobile) {
+        router.push("/");
+      }
     } catch (error) {
       console.error("Google sign-in error:", error);
       if (error.code === "auth/popup-closed-by-user") {
@@ -115,8 +136,11 @@ export default function Signup() {
       } else {
         setAuthError("Failed to sign in with Google. Please try again.");
       }
-    } finally {
       setIsGoogleLoading(false);
+    } finally {
+      if (!isMobile) {
+        setIsGoogleLoading(false);
+      }
     }
   };
 
@@ -125,7 +149,9 @@ export default function Signup() {
     setAuthError("");
     try {
       await signInWithGithub();
-      router.push("/");
+      if (!isMobile) {
+        router.push("/");
+      }
     } catch (error) {
       console.error("GitHub sign-in error:", error);
       if (error.code === "auth/popup-closed-by-user") {
@@ -135,38 +161,41 @@ export default function Signup() {
       } else {
         setAuthError("Failed to sign in with GitHub. Please try again");
       }
-    } finally {
       setIsGithubLoading(false);
+    } finally {
+      if (!isMobile) {
+        setIsGithubLoading(false);
+      }
     }
   };
 
   return (
-    <section className="py-20 min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
-      <div className="container mx-auto px-6">
-        <div className="max-w-md mx-auto bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm rounded-xl p-8 shadow-xl">
-          <h1 className="text-3xl font-bold mb-4 text-center text-[var(--tw-text)]">
+    <section className="py-8 sm:py-20 min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="max-w-md mx-auto bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-xl">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-center text-[var(--tw-text)]">
             Join <span className="text-[var(--tw-focus)]">TripWeaver</span>
           </h1>
-          <p className="text-[var(--tw-text)] opacity-80 text-center mb-6">
-            Create an account to start your journey with us
+          <p className="text-[var(--tw-text)] opacity-80 text-center text-sm sm:text-base mb-5 sm:mb-6">
+            Create an account to start your journey
           </p>
           {authError && (
-            <div className="mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded flex items-start">
+            <div className="mb-5 sm:mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded flex items-start">
               <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-              <span>{authError}</span>
+              <span className="text-sm">{authError}</span>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="username"
-                className="block mb-2 font-medium text-[var(--tw-text)]"
+                className="block mb-1.5 sm:mb-2 text-sm font-medium text-[var(--tw-text)]"
               >
                 Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <User className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--tw-text)] opacity-70" />
                 </div>
                 <input
                   type="text"
@@ -174,30 +203,32 @@ export default function Signup() {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border ${
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border ${
                     errors.username
                       ? "border-red-500"
                       : "border-[var(--tw-border)]"
-                  } text-[var(--tw-text)]`}
+                  } text-[var(--tw-text)] text-base`}
                   placeholder="Choose a username"
                   autoComplete="username"
                 />
               </div>
               {errors.username && (
-                <p className="mt-1 text-red-500 text-sm">{errors.username}</p>
+                <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                  {errors.username}
+                </p>
               )}
             </div>
 
             <div>
               <label
                 htmlFor="email"
-                className="block mb-2 font-medium text-[var(--tw-text)]"
+                className="block mb-1.5 sm:mb-2 text-sm font-medium text-[var(--tw-text)]"
               >
                 Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Mail className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--tw-text)] opacity-70" />
                 </div>
                 <input
                   type="email"
@@ -205,30 +236,32 @@ export default function Signup() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border ${
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border ${
                     errors.email
                       ? "border-red-500"
                       : "border-[var(--tw-border)]"
-                  } text-[var(--tw-text)]`}
+                  } text-[var(--tw-text)] text-base`}
                   placeholder="your@email.com"
                   autoComplete="email"
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-red-500 text-sm">{errors.email}</p>
+                <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                  {errors.email}
+                </p>
               )}
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="block mb-2 font-medium text-[var(--tw-text)]"
+                className="block mb-1.5 sm:mb-2 text-sm font-medium text-[var(--tw-text)]"
               >
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Lock className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--tw-text)] opacity-70" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -236,13 +269,13 @@ export default function Signup() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-10 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border ${
+                  className={`w-full pl-10 pr-10 py-2.5 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border ${
                     errors.password
                       ? "border-red-500"
                       : "border-[var(--tw-border)]"
-                  } text-[var(--tw-text)]`}
+                  } text-[var(--tw-text)] text-base`}
                   placeholder="••••••••"
-                  autoComplete="none"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -250,27 +283,29 @@ export default function Signup() {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                    <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--tw-text)] opacity-70" />
                   ) : (
-                    <Eye className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                    <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--tw-text)] opacity-70" />
                   )}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-red-500 text-sm">{errors.password}</p>
+                <p className="mt-1 text-red-500 text-xs sm:text-sm">
+                  {errors.password}
+                </p>
               )}
             </div>
 
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block mb-2 font-medium text-[var(--tw-text)]"
+                className="block mb-1.5 sm:mb-2 text-sm font-medium text-[var(--tw-text)]"
               >
                 Confirm Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Lock className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--tw-text)] opacity-70" />
                 </div>
                 <input
                   type={showConfirmPassword ? "text" : "password"}
@@ -278,13 +313,13 @@ export default function Signup() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-10 py-2 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border ${
+                  className={`w-full pl-10 pr-10 py-2.5 rounded-lg focus:outline-none focus:border-1.5 focus:border-[var(--tw-text)] placeholder-custom bg-[var(--tw-field)] border ${
                     errors.confirmPassword
                       ? "border-red-500"
                       : "border-[var(--tw-border)]"
-                  } text-[var(--tw-text)]`}
+                  } text-[var(--tw-text)] text-base`}
                   placeholder="••••••••"
-                  autoComplete="none"
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -292,14 +327,14 @@ export default function Signup() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                    <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--tw-text)] opacity-70" />
                   ) : (
-                    <Eye className="h-5 w-5 text-[var(--tw-text)] opacity-70" />
+                    <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--tw-text)] opacity-70" />
                   )}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="mt-1 text-red-500 text-sm">
+                <p className="mt-1 text-red-500 text-xs sm:text-sm">
                   {errors.confirmPassword}
                 </p>
               )}
@@ -319,7 +354,7 @@ export default function Signup() {
                     }`}
                   />
                 </div>
-                <div className="ml-3 text-sm">
+                <div className="ml-3 text-xs sm:text-sm">
                   <label
                     htmlFor="agreeToTerms"
                     className="text-[var(--tw-text)]"
@@ -342,7 +377,7 @@ export default function Signup() {
                 </div>
               </div>
               {errors.agreeToTerms && (
-                <p className="mt-1 text-red-500 text-sm">
+                <p className="mt-1 text-red-500 text-xs sm:text-sm">
                   {errors.agreeToTerms}
                 </p>
               )}
@@ -351,11 +386,11 @@ export default function Signup() {
             <button
               type="submit"
               disabled={isLoading}
-              className="cursor-pointer w-full py-2 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white flex items-center justify-center"
+              className="cursor-pointer w-full py-2.5 px-6 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-[var(--tw-focus)] text-white flex items-center justify-center mt-2"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                  <Loader2 className="animate-spin h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Creating account...
                 </>
               ) : (
@@ -367,7 +402,7 @@ export default function Signup() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[var(--tw-border)]"></div>
             </div>
-            <div className="relative flex justify-center text-sm">
+            <div className="relative flex justify-center text-xs sm:text-sm">
               <span className="bg-[var(--tw-subbackground)] px-2 text-[var(--tw-text)] opacity-70">
                 Or continue with
               </span>
@@ -378,12 +413,12 @@ export default function Signup() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading}
-              className="cursor-pointer w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-white text-gray-700 border border-gray-300 flex items-center justify-center gap-2"
+              className="cursor-pointer w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-white text-gray-700 border border-gray-300 flex items-center justify-center gap-2"
             >
               {isGoogleLoading ? (
-                <Loader2 className="animate-spin h-5 w-5" />
+                <Loader2 className="animate-spin h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -402,24 +437,24 @@ export default function Signup() {
                   />
                 </svg>
               )}
-              Continue with Google
+              <span className="text-sm sm:text-base">Continue with Google</span>
             </button>
             <button
               type="button"
               onClick={handleGithubSignIn}
               disabled={isGithubLoading}
-              className="cursor-pointer w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-gray-900 text-white flex items-center justify-center gap-2"
+              className="cursor-pointer w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-gray-900 text-white flex items-center justify-center gap-2"
             >
               {isGithubLoading ? (
-                <Loader2 className="animate-spin h-5 w-5" />
+                <Loader2 className="animate-spin h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
-                <Github className="h-5 w-5" />
+                <Github className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
-              Continue with GitHub
+              <span className="text-sm sm:text-base">Continue with GitHub</span>
             </button>
           </div>
-          <div className="mt-8 text-center">
-            <p className="text-[var(--tw-text)]">
+          <div className="mt-6 text-center">
+            <p className="text-sm text-[var(--tw-text)]">
               Already have an account?{" "}
               <Link
                 href="/login"
