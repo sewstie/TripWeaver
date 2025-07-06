@@ -83,43 +83,45 @@ export default function ProfileCard() {
   };
 
   return (
-    <div className="bg-[var(--tw-subbackground)] flex flex-col justify-between rounded-lg p-6 dashboard-card">
-      <div className="flex justify-between">
-        <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-6">
-          Profile
-        </h2>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            {!isEditing ? (
-              <button
-                onClick={handleEditStart}
-                className="cursor-pointer flex items-center gap-2 px-7 py-1.5 text-sm bg-[var(--tw-focus)] text-white rounded-lg hover:opacity-90 transition-opacity"
-              >
-                <Edit2 className="h-4 w-4" />
-                Edit
-              </button>
-            ) : (
-              <>
+    <div className="bg-[var(--tw-subbackground)] flex flex-col justify-between rounded-lg p-4 sm:p-6 dashboard-card">
+      <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-[var(--tw-text)] mb-3 sm:mb-0">
+            Profile
+          </h2>
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+              {!isEditing ? (
                 <button
-                  onClick={handleSave}
-                  disabled={isLoading}
-                  className="cursor-pointer flex items-center gap-2 px-5 py-1.5 text-sm bg-[var(--tw-green)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                  onClick={handleEditStart}
+                  className="cursor-pointer flex items-center gap-2 px-5 sm:px-7 py-1.5 text-sm bg-[var(--tw-focus)] text-white rounded-lg hover:opacity-90 transition-opacity"
                 >
-                  {isLoading ? (
-                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  {!isLoading && "Save"}
+                  <Edit2 className="h-4 w-4" />
+                  Edit
                 </button>
-                <button
-                  onClick={handleEditCancel}
-                  className="cursor-pointer flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </>
-            )}
+              ) : (
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={isLoading}
+                    className="cursor-pointer flex items-center gap-2 px-4 sm:px-5 py-1.5 text-sm bg-[var(--tw-green)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    {!isLoading && "Save"}
+                  </button>
+                  <button
+                    onClick={handleEditCancel}
+                    className="cursor-pointer flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -136,67 +138,67 @@ export default function ProfileCard() {
         )}
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-[var(--tw-border)]">
+            <div className="flex items-center gap-3 mb-2 sm:mb-0">
               <User className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
               <span className="text-[var(--tw-text)] opacity-70">
                 Display Name
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-8 sm:ml-0">
               {isEditing ? (
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="px-3 py-1 bg-[var(--tw-field)] border border-[var(--tw-border)] rounded text-[var(--tw-text)] text-sm focus:outline-none focus:border-[var(--tw-focus)]"
+                  className="w-full px-3 py-1 bg-[var(--tw-field)] border border-[var(--tw-border)] rounded text-[var(--tw-text)] text-sm focus:outline-none focus:border-[var(--tw-focus)]"
                 />
               ) : (
-                <span className="text-[var(--tw-text)] font-medium">
+                <span className="text-[var(--tw-text)] font-medium break-words">
                   {getDisplayName()}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-[var(--tw-border)]">
+            <div className="flex items-center gap-3 mb-2 sm:mb-0">
               <Mail className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
               <span className="text-[var(--tw-text)] opacity-70">
                 Email Address
               </span>
             </div>
-            <span className="text-[var(--tw-text)] font-medium text-sm">
+            <span className="text-[var(--tw-text)] font-medium text-sm ml-8 sm:ml-0 break-words">
               {currentUser?.email}
             </span>
           </div>
 
-          <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-[var(--tw-border)]">
+            <div className="flex items-center gap-3 mb-2 sm:mb-0">
               <Calendar className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
               <span className="text-[var(--tw-text)] opacity-70">
                 Member Since
               </span>
             </div>
-            <span className="text-[var(--tw-text)] font-medium text-sm">
+            <span className="text-[var(--tw-text)] font-medium text-sm ml-8 sm:ml-0">
               {formatDate(currentUser?.metadata?.creationTime)}
             </span>
           </div>
 
-          <div className="flex items-center justify-between py-3 border-b border-[var(--tw-border)]">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-[var(--tw-border)]">
+            <div className="flex items-center gap-3 mb-2 sm:mb-0">
               <Shield className="h-4 w-4 text-[var(--tw-text)] opacity-70" />
               <span className="text-[var(--tw-text)] opacity-70">
                 Sign-in Method
               </span>
             </div>
-            <span className="text-[var(--tw-text)] font-medium text-sm">
+            <span className="text-[var(--tw-text)] font-medium text-sm ml-8 sm:ml-0">
               {getProviderName()}
             </span>
           </div>
         </div>
       </div>
-      <div>
+      <div className="mt-6">
         <button
           onClick={logout}
           className="cursor-pointer text-[var(--tw-text)] w-full px-4 py-2 border border-[var(--tw-focus)] rounded-lg"

@@ -22,9 +22,21 @@ const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
 export default function WorldMap({ trips, onTripClick }) {
   const [isClient, setIsClient] = useState(false);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [mapHeight, setMapHeight] = useState("24rem");
 
   useEffect(() => {
     setIsClient(true);
+
+    const updateMapHeight = () => {
+      if (window.innerWidth < 640) {
+        setMapHeight("16rem");
+      } else {
+        setMapHeight("24rem");
+      }
+    };
+
+    updateMapHeight();
+    window.addEventListener("resize", updateMapHeight);
 
     const loadLeaflet = async () => {
       if (typeof window !== "undefined") {
@@ -53,6 +65,10 @@ export default function WorldMap({ trips, onTripClick }) {
     };
 
     loadLeaflet();
+
+    return () => {
+      window.removeEventListener("resize", updateMapHeight);
+    };
   }, []);
 
   const formatDate = (date) => {
@@ -67,7 +83,7 @@ export default function WorldMap({ trips, onTripClick }) {
         date = new Date(date);
       }
 
-      return format(date, "d MMMM");
+      return format(date, "d MMM");
     } catch (error) {
       console.error("Date formatting error:", error);
       return "Invalid date";
@@ -116,7 +132,7 @@ export default function WorldMap({ trips, onTripClick }) {
 
   if (!isClient || !leafletLoaded) {
     return (
-      <div className="h-96 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
+      <div className="h-64 sm:h-96 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus)] mx-auto mb-4"></div>
           <p className="text-[var(--tw-text)] opacity-70">Loading map...</p>
@@ -131,15 +147,20 @@ export default function WorldMap({ trips, onTripClick }) {
   });
 
   return (
-    <div className="h-96 w-full rounded-lg overflow-hidden border border-[var(--tw-border)]">
+    <div
+      className="w-full rounded-lg overflow-hidden border border-[var(--tw-border)]"
+      style={{ height: mapHeight }}
+    >
       <MapContainer
         center={[20, 0]}
         zoom={2}
         style={{ height: "100%", width: "100%" }}
         className="z-0"
+        attributionControl={false}
+        zoomControl={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
@@ -154,22 +175,22 @@ export default function WorldMap({ trips, onTripClick }) {
               }}
             >
               <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-lg">{trip.name}</h3>
-                  <p className="text-sm text-gray-500">
+                <div className="p-1 sm:p-2 min-w-[180px] sm:min-w-[200px]">
+                  <h3 className="font-bold text-base sm:text-lg">
+                    {trip.name}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     {getDisplayLocation(trip)}
                   </p>
-                  <div className="text-sm">
+                  <div className="text-xs sm:text-sm my-1 sm:my-2">
                     <p>
                       {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
                     </p>
                   </div>
                   {onTripClick && (
                     <button
-                      onClick={(e) => {
-                        onTripClick(trip);
-                      }}
-                      className="cursor-pointer rounded bg-[var(--tw-focus)] text-white px-3 py-1 w-full transition-colors"
+                      onClick={() => onTripClick(trip)}
+                      className="cursor-pointer rounded bg-[var(--tw-focus)] text-white px-3 py-1 w-full transition-colors text-sm mt-1"
                     >
                       View Trip
                     </button>

@@ -61,7 +61,7 @@ export default function TripsCard({ trips, setTrips }) {
       if (typeof dateString === "string") {
         dateString = new Date(dateString);
       }
-      return format(dateString, "d MMMM");
+      return format(dateString, "d MMM");
     } catch (error) {
       console.error("Date formatting error:", error);
       return "Not set";
@@ -112,7 +112,7 @@ export default function TripsCard({ trips, setTrips }) {
 
   if (isLoading) {
     return (
-      <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 h-full">
+      <div className="bg-[var(--tw-subbackground)] rounded-lg p-4 sm:p-6 h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus)] mx-auto"></div>
       </div>
     );
@@ -120,13 +120,13 @@ export default function TripsCard({ trips, setTrips }) {
 
   return (
     <>
-      <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 dashboard-card">
-        <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-6">
+      <div className="bg-[var(--tw-subbackground)] rounded-lg p-4 sm:p-6 dashboard-card">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--tw-text)] mb-4 sm:mb-6">
           Your Trips
         </h2>
 
         {sortedTrips.length === 0 ? (
-          <div className="text-center py-8 flex-1 flex flex-col justify-center">
+          <div className="text-center py-6 sm:py-8 flex-1 flex flex-col justify-center">
             <p className="text-[var(--tw-text)] opacity-70 mb-4">
               You haven't created any trips yet.
             </p>
@@ -139,18 +139,29 @@ export default function TripsCard({ trips, setTrips }) {
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-            <div className="space-y-4">
+            <div className="space-y-3">
               {sortedTrips.map((trip) => (
                 <div
                   key={trip.id}
                   onClick={() => handleTripClick(trip)}
-                  className="bg-[var(--tw-field)] flex justify-between rounded-lg p-4 hover:bg-opacity-80 transition-colors cursor-pointer"
+                  className="bg-[var(--tw-field)] flex flex-col sm:flex-row justify-between rounded-lg p-3 sm:p-4 hover:bg-opacity-80 transition-colors cursor-pointer"
                 >
                   <div className="flex flex-col justify-between min-w-0 flex-1">
-                    <h3 className="text-lg font-semibold text-[var(--tw-text)] truncate">
-                      {trip.name}
-                    </h3>
-                    <span className="text-[var(--tw-text)] opacity-70 text-sm truncate">
+                    <div className="flex justify-between items-start sm:items-center">
+                      <h3 className="text-base sm:text-lg font-semibold text-[var(--tw-text)] truncate pr-2">
+                        {trip.name}
+                      </h3>
+                      <button
+                        onClick={(e) =>
+                          handleDeleteClick(e, trip.id, trip.name)
+                        }
+                        className="text-red-400 hover:text-red-300 cursor-pointer p-1 transition-colors flex-shrink-0 sm:hidden"
+                        title="Delete trip"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <span className="text-[var(--tw-text)] opacity-70 text-xs sm:text-sm truncate mt-1">
                       {trip.type === "advanced"
                         ? trip.arrivalCity?.formatted
                           ? trip.arrivalCity.formatted
@@ -162,8 +173,11 @@ export default function TripsCard({ trips, setTrips }) {
                         ? trip.destination.split(",").pop().trim()
                         : trip.destination}
                     </span>
+                    <div className="text-xs text-[var(--tw-text)] opacity-70 mt-2 sm:hidden">
+                      {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 ml-4">
+                  <div className="hidden sm:flex items-center gap-4 ml-4">
                     <div className="flex flex-col items-end text-xs text-[var(--tw-text)] opacity-70">
                       <span>
                         {formatDate(trip.startDate)} -{" "}

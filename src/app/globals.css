@@ -449,6 +449,33 @@ body {
       filter: blur(5px);
     }
   }
+
+  .leaflet-touch .leaflet-control-zoom a {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+  }
+
+  .leaflet-popup-content {
+    margin: 12px;
+    font-size: 14px;
+  }
+
+  .custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .dashboard-card {
+    overflow-x: hidden;
+    word-break: break-word;
+  }
 }
 
 @media (pointer: coarse) {

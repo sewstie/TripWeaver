@@ -69,13 +69,13 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--tw-background)] pt-20 pb-8">
+    <div className="min-h-screen bg-[var(--tw-background)] pt-16 sm:pt-20 pb-6 sm:pb-8">
       <div className="container mx-auto px-4 max-w-6xl">
-        <h1 className="text-4xl font-bold text-[var(--tw-text)] mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--tw-text)] mb-4 sm:mb-8">
           Account Dashboard
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-8">
           <div className="lg:col-span-2 h-full">
             <ProfileCard />
           </div>
@@ -84,23 +84,23 @@ export default function AccountPage() {
           </div>
         </div>
 
-        <div className="bg-[var(--tw-subbackground)] rounded-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-[var(--tw-text)]">
+        <div className="bg-[var(--tw-subbackground)] rounded-lg p-4 sm:p-6">
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-[var(--tw-text)]">
               Your Travel Map
             </h2>
-            <div className="text-sm text-[var(--tw-text)] opacity-70">
+            <div className="text-xs sm:text-sm text-[var(--tw-text)] opacity-70">
               {trips.length} {trips.length === 1 ? "trip" : "trips"} planned
             </div>
           </div>
 
           {isLoadingTrips ? (
-            <div className="h-96 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
+            <div className="h-64 sm:h-96 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus)]"></div>
             </div>
           ) : trips.length === 0 ? (
-            <div className="h-96 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
-              <div className="text-center">
+            <div className="h-64 sm:h-96 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
+              <div className="text-center px-4">
                 <p className="text-[var(--tw-text)] opacity-70 mb-4">
                   No trips to display on the map yet.
                 </p>
