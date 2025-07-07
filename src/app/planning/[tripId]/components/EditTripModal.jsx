@@ -16,13 +16,40 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const [scrollY, setScrollY] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    const metaViewport = document.querySelector("meta[name=viewport]");
+    if (!metaViewport) {
+      const meta = document.createElement("meta");
+      meta.name = "viewport";
+      meta.content = "width=device-width, initial-scale=1, maximum-scale=1";
+      document.head.appendChild(meta);
+    } else {
+      metaViewport.content =
+        "width=device-width, initial-scale=1, maximum-scale=1";
+    }
+
     const currentScrollY = window.scrollY;
     setScrollY(currentScrollY);
 
     const removeScrollLock = createScrollLock();
-    return removeScrollLock;
+
+    return () => {
+      removeScrollLock();
+      window.removeEventListener("resize", checkMobile);
+
+      if (metaViewport) {
+        metaViewport.content = "width=device-width, initial-scale=1";
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -119,7 +146,7 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       style={{
         height: "100vh",
         marginTop: `${scrollY}px`,
@@ -127,20 +154,21 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
     >
       <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
       <div className="relative bg-[var(--tw-subbackground)] rounded-lg w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col z-10">
-        <div className="flex justify-between items-center p-6 border-b border-[var(--tw-border)]">
-          <h3 className="text-xl font-bold text-[var(--tw-text)]">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-[var(--tw-border)]">
+          <h3 className="text-lg sm:text-xl font-bold text-[var(--tw-text)]">
             Edit Trip Details
           </h3>
           <button
             onClick={onClose}
             className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5 text-[var(--tw-text)]" />
           </button>
         </div>
 
         <div
-          className="overflow-y-auto flex-1 p-6"
+          className="overflow-y-auto flex-1 p-4 sm:p-6"
           style={{ scrollbarColor: "var(--tw-border) transparent" }}
         >
           {message && (
@@ -158,9 +186,9 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
-              <label className="block mb-2 font-medium text-[var(--tw-text)]">
+              <label className="block mb-1.5 sm:mb-2 font-medium text-[var(--tw-text)]">
                 Trip Title
               </label>
               <input
@@ -169,14 +197,14 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Enter trip title..."
-                className="w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors"
+                className="w-full px-4 py-2.5 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors"
                 required
                 autoComplete="off"
               />
             </div>
 
             <div>
-              <label className="block mb-2 font-medium text-[var(--tw-text)]">
+              <label className="block mb-1.5 sm:mb-2 font-medium text-[var(--tw-text)]">
                 Description (optional)
               </label>
               <textarea
@@ -185,14 +213,14 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
                 onChange={handleChange}
                 placeholder="Describe your trip..."
                 rows={3}
-                className="w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors resize-none"
+                className="w-full px-4 py-2.5 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors resize-none"
                 autoComplete="off"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block mb-2 font-medium text-[var(--tw-text)] flex items-center gap-2">
+                <label className="block mb-1.5 sm:mb-2 font-medium text-[var(--tw-text)] flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Start Date
                 </label>
@@ -201,13 +229,13 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
                   name="startDate"
                   value={formData.startDate}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
+                  className="w-full px-4 py-2.5 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
                   required
                 />
               </div>
 
               <div>
-                <label className="block mb-2 font-medium text-[var(--tw-text)] flex items-center gap-2">
+                <label className="block mb-1.5 sm:mb-2 font-medium text-[var(--tw-text)] flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   End Date
                 </label>
@@ -217,7 +245,7 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
                   value={formData.endDate}
                   onChange={handleChange}
                   min={formData.startDate}
-                  className="w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
+                  className="w-full px-4 py-2.5 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
                   required
                 />
               </div>
@@ -233,24 +261,24 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
           </form>
         </div>
 
-        <div className="border-t border-[var(--tw-border)] p-6">
-          <div className="flex gap-3">
+        <div className="border-t border-[var(--tw-border)] p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer flex-1 px-4 py-2 border border-[var(--tw-border)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-field)] transition-colors"
+              className="cursor-pointer flex-1 px-4 py-2.5 border border-[var(--tw-border)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-field)] transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || !canSubmit()}
-              className="cursor-pointer flex-1 bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="cursor-pointer flex-1 bg-[var(--tw-focus)] text-white px-4 py-2.5 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Updating...
+                  <span>Updating...</span>
                 </>
               ) : (
                 "Update Trip"

@@ -13,9 +13,17 @@ export default function TripMap({
 }) {
   const [isClient, setIsClient] = useState(false);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
 
     const loadLeaflet = async () => {
       if (typeof window !== "undefined") {
@@ -44,6 +52,10 @@ export default function TripMap({
     };
 
     loadLeaflet();
+
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
   }, []);
 
   const getDayMapPoints = (dayIndex) => {
@@ -84,6 +96,9 @@ export default function TripMap({
   };
 
   const getMapZoom = () => {
+    if (isMobile) {
+      return city ? 12 : 11;
+    }
     if (city) {
       return 13;
     }
@@ -112,8 +127,8 @@ export default function TripMap({
 
   if (!isClient || !leafletLoaded) {
     return (
-      <div className="space-y-6">
-        <div className="h-80 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="h-60 sm:h-80 bg-[var(--tw-field)] rounded-lg flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--tw-focus)] mx-auto mb-4"></div>
             <p className="text-[var(--tw-text)] opacity-70">Loading maps...</p>
@@ -124,22 +139,22 @@ export default function TripMap({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--tw-text)]">
+            <h3 className="text-base sm:text-lg font-semibold text-[var(--tw-text)]">
               {availableDays[selectedDay]
                 ? `Day ${availableDays[selectedDay].dayNumber}`
                 : "Day 1"}
             </h3>
-            <p className="text-sm text-[var(--tw-text)] opacity-70">
+            <p className="text-xs sm:text-sm text-[var(--tw-text)] opacity-70">
               {currentDayPoints.length} location
               {currentDayPoints.length !== 1 ? "s" : ""} shown
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-center">
             <button
               onClick={handlePreviousDay}
               disabled={!canGoPrevious()}
@@ -148,12 +163,13 @@ export default function TripMap({
                   ? "bg-[var(--tw-field)] cursor-pointer hover:bg-[var(--tw-subbackground)] text-[var(--tw-text)]"
                   : "bg-[var(--tw-field)] cursor-not-allowed opacity-50 text-[var(--tw-text)]"
               }`}
+              aria-label="Previous day"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
 
-            <div className="px-4 py-1 rounded-lg border border-[var(--tw-focus)] min-w-28 text-center">
-              <span className="text-[var(--tw-text)] font-medium">
+            <div className="px-3 sm:px-4 py-1 rounded-lg border border-[var(--tw-focus)] min-w-20 sm:min-w-28 text-center">
+              <span className="text-sm sm:text-base text-[var(--tw-text)] font-medium">
                 Day {availableDays[selectedDay]?.dayNumber || 1}
               </span>
             </div>
@@ -166,19 +182,21 @@ export default function TripMap({
                   ? "bg-[var(--tw-field)] cursor-pointer hover:bg-[var(--tw-subbackground)] text-[var(--tw-text)]"
                   : "bg-[var(--tw-field)] cursor-not-allowed opacity-50 text-[var(--tw-text)]"
               }`}
+              aria-label="Next day"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <div className="h-80 w-full rounded-lg overflow-hidden border border-[var(--tw-border)]">
+        <div className="h-60 sm:h-80 w-full rounded-lg overflow-hidden border border-[var(--tw-border)]">
           <MapContainer
             center={getMapCenter()}
             zoom={getMapZoom()}
             style={{ height: "100%", width: "100%" }}
             className="z-0"
-            zoomControl={true}
+            zoomControl={!isMobile}
+            attributionControl={!isMobile}
             key={`day-${selectedDay}-${currentDayPoints.length}`}
           >
             <TileLayer
@@ -192,8 +210,8 @@ export default function TripMap({
                 position={[point.coordinates.lat, point.coordinates.lng]}
               >
                 <Popup>
-                  <div className="p-2 min-w-[200px]">
-                    <h3 className="font-bold text-lg mb-2">{point.name}</h3>
+                  <div className="p-2 min-w-[180px]">
+                    <h3 className="font-bold text-base mb-2">{point.name}</h3>
                     <p className="text-sm mb-2">{point.location}</p>
                     {point.notes && (
                       <p className="text-xs text-gray-600 mb-2">
@@ -208,24 +226,25 @@ export default function TripMap({
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4 mt-6">
         <div>
-          <h3 className="text-lg font-semibold text-[var(--tw-text)]">
+          <h3 className="text-base sm:text-lg font-semibold text-[var(--tw-text)]">
             All Trip Locations
           </h3>
-          <p className="text-sm text-[var(--tw-text)] opacity-70">
+          <p className="text-xs sm:text-sm text-[var(--tw-text)] opacity-70">
             {mapPoints.length} location
             {mapPoints.length !== 1 ? "s" : ""} total
           </p>
         </div>
 
-        <div className="h-80 w-full rounded-lg overflow-hidden border border-[var(--tw-border)]">
+        <div className="h-60 sm:h-80 w-full rounded-lg overflow-hidden border border-[var(--tw-border)]">
           <MapContainer
             center={getMapCenter()}
             zoom={getMapZoom()}
             style={{ height: "100%", width: "100%" }}
             className="z-0"
-            zoomControl={true}
+            zoomControl={!isMobile}
+            attributionControl={!isMobile}
             key={`all-${mapPoints.length}`}
           >
             <TileLayer
@@ -239,8 +258,8 @@ export default function TripMap({
                 position={[point.coordinates.lat, point.coordinates.lng]}
               >
                 <Popup>
-                  <div className="p-2 min-w-[200px]">
-                    <h3 className="font-bold text-lg mb-2">{point.name}</h3>
+                  <div className="p-2 min-w-[180px]">
+                    <h3 className="font-bold text-base mb-2">{point.name}</h3>
                     <p className="text-sm mb-2">{point.location}</p>
                     {point.notes && (
                       <p className="text-xs text-gray-600 mb-2">

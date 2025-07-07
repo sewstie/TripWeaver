@@ -73,7 +73,7 @@ export default function SingleTripLayout({
   const days = generateDays();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-3 sm:px-0">
       <TripHeader
         trip={trip}
         onEdit={onEdit}
@@ -81,41 +81,41 @@ export default function SingleTripLayout({
         onDelete={onDelete}
       />
 
-      <div className="mb-6">
-        <div className="flex bg-[var(--tw-subbackground)] gap-1 rounded-lg p-1 w-fit">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex bg-[var(--tw-subbackground)] gap-1 rounded-lg p-1 w-full sm:w-fit">
           <button
             onClick={() => setViewMode("schedule")}
-            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+            className={`cursor-pointer flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md transition-colors flex-1 sm:flex-initial ${
               viewMode === "schedule"
                 ? "bg-[var(--tw-focus)] text-white"
-                : "text-[var(--tw-text)] hover:bg-[var(--tw-subbackground)]"
+                : "text-[var(--tw-text)] hover:bg-[var(--tw-field)]"
             }`}
           >
             <Calendar className="w-4 h-4" />
-            Schedule
+            <span>Schedule</span>
           </button>
           <button
             onClick={() => setViewMode("map")}
-            className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+            className={`cursor-pointer flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md transition-colors flex-1 sm:flex-initial ${
               viewMode === "map"
                 ? "bg-[var(--tw-focus)] text-white"
-                : "text-[var(--tw-text)] hover:bg-[var(--tw-subbackground)]"
+                : "text-[var(--tw-text)] hover:bg-[var(--tw-field)]"
             }`}
           >
             <Map className="w-4 h-4" />
-            Map
+            <span>Map</span>
           </button>
         </div>
       </div>
 
       {viewMode === "schedule" ? (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-[var(--tw-text)] mb-4">
+        <div className="space-y-5 sm:space-y-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-[var(--tw-text)] mb-2 sm:mb-4">
             Day-by-Day Schedule
           </h2>
 
           {days.length === 0 ? (
-            <div className="bg-[var(--tw-subbackground)] rounded-lg p-6 text-center">
+            <div className="bg-[var(--tw-subbackground)] rounded-lg p-4 sm:p-6 text-center">
               <p className="text-[var(--tw-text)] opacity-70">
                 No days to display. Please check your trip dates.
               </p>
@@ -134,7 +134,7 @@ export default function SingleTripLayout({
           )}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           <TripMap
             mapPoints={mapPoints}
             trip={trip}

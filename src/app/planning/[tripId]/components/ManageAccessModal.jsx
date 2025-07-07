@@ -39,13 +39,25 @@ export default function ManageAccessModal({ trip, onClose }) {
     userName: "",
   });
   const [scrollY, setScrollY] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
     const currentScrollY = window.scrollY;
     setScrollY(currentScrollY);
 
     const removeScrollLock = createScrollLock();
-    return removeScrollLock;
+
+    return () => {
+      removeScrollLock();
+      window.removeEventListener("resize", checkMobile);
+    };
   }, []);
 
   const getDisplayName = (userData, userId) => {
@@ -297,7 +309,7 @@ export default function ManageAccessModal({ trip, onClose }) {
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
         style={{
           height: "100vh",
           marginTop: `${scrollY}px`,
@@ -305,26 +317,27 @@ export default function ManageAccessModal({ trip, onClose }) {
       >
         <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
         <div className="relative bg-[var(--tw-subbackground)] rounded-lg w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col z-10">
-          <div className="flex justify-between items-center p-6 border-b border-[var(--tw-border)]">
-            <h3 className="text-xl font-bold text-[var(--tw-text)]">
+          <div className="flex justify-between items-center p-4 sm:p-6 border-b border-[var(--tw-border)]">
+            <h3 className="text-lg sm:text-xl font-bold text-[var(--tw-text)]">
               Manage Trip Access
             </h3>
             <button
               onClick={onClose}
               className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5 text-[var(--tw-text)]" />
             </button>
           </div>
 
           <div
-            className="overflow-y-auto flex-1 p-6"
+            className="overflow-y-auto flex-1 p-4 sm:p-6"
             style={{ scrollbarColor: "var(--tw-border) transparent" }}
           >
             {isOwner && (
               <form onSubmit={handleInvite} className="mb-6">
-                <div className="flex items-start gap-3">
-                  <div className="flex-1">
+                <div className="flex flex-col sm:flex-row items-start gap-3">
+                  <div className="flex-1 w-full">
                     <input
                       type="email"
                       value={email}
@@ -335,11 +348,11 @@ export default function ManageAccessModal({ trip, onClose }) {
                       autoComplete="off"
                     />
                   </div>
-                  <div className="relative">
+                  <div className="relative w-full sm:w-auto">
                     <select
                       value={selectedRole}
                       onChange={(e) => setSelectedRole(e.target.value)}
-                      className="px-4 py-2 appearance-none pr-8 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
+                      className="w-full sm:w-auto px-4 py-2 appearance-none pr-8 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
                     >
                       <option value="editor">Editor</option>
                       <option value="viewer">Viewer</option>
@@ -349,7 +362,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                   <button
                     type="submit"
                     disabled={isSubmitting || !email.trim()}
-                    className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="cursor-pointer w-full sm:w-auto bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
@@ -378,8 +391,8 @@ export default function ManageAccessModal({ trip, onClose }) {
             )}
 
             <div>
-              <h4 className="text-lg font-semibold text-[var(--tw-text)] mb-3 flex items-center gap-2">
-                <Users className="w-5 h-5" />
+              <h4 className="text-base sm:text-lg font-semibold text-[var(--tw-text)] mb-3 flex items-center gap-2">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                 Current Collaborators ({collaboratorDetails.length})
               </h4>
 
@@ -392,28 +405,28 @@ export default function ManageAccessModal({ trip, onClose }) {
                   {collaboratorDetails.map((collaborator) => (
                     <div
                       key={collaborator.uid}
-                      className={`flex items-center justify-between rounded-lg p-3 bg-[var(--tw-field)]`}
+                      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg p-3 bg-[var(--tw-field)]`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 mb-3 sm:mb-0">
                         <div className="flex items-center gap-2">
                           {getRoleIcon(collaborator.role)}
                           <div>
-                            <div className="font-medium text-[var(--tw-text)] flex items-center gap-2">
+                            <div className="font-medium text-[var(--tw-text)] flex items-center gap-2 truncate max-w-[180px] sm:max-w-none">
                               {collaborator.displayName}
                               {collaborator.uid === currentUser?.uid && (
-                                <span className="text-sm text-[var(--tw-text)] opacity-60 ml-1">
+                                <span className="text-xs sm:text-sm text-[var(--tw-text)] opacity-60 ml-1">
                                   (You)
                                 </span>
                               )}
                             </div>
-                            <div className="text-sm text-[var(--tw-text)] opacity-70">
+                            <div className="text-xs sm:text-sm text-[var(--tw-text)] opacity-70 truncate max-w-[180px] sm:max-w-none">
                               {collaborator.email}
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 justify-end">
                         {isOwner &&
                         collaborator.uid !== currentUser?.uid &&
                         collaborator.role !== "owner" ? (
@@ -441,7 +454,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                                   collaborator.displayName
                                 )
                               }
-                              className="cursor-pointer p-1"
+                              className="cursor-pointer p-1.5"
                               title="Remove access"
                             >
                               <Trash2 className="w-4 h-4 text-red-500 hover:text-red-400 transition-all duration-75" />
@@ -451,8 +464,8 @@ export default function ManageAccessModal({ trip, onClose }) {
                           <span
                             className={`px-2 py-1 text-sm rounded  ${
                               collaborator.role === "owner"
-                                ? "bg-yellow-200 text-yellow-800 font-semibold text-center w-28"
-                                : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] w-28"
+                                ? "bg-yellow-200 text-yellow-800 font-semibold text-center w-20 sm:w-28"
+                                : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] w-20 sm:w-28"
                             }`}
                           >
                             {getRoleDisplayName(collaborator.role)}
@@ -466,7 +479,7 @@ export default function ManageAccessModal({ trip, onClose }) {
             </div>
 
             <div className="mt-6 pt-4 border-t border-[var(--tw-field)]">
-              <div className="text-sm text-[var(--tw-text)] opacity-70 space-y-1">
+              <div className="text-xs sm:text-sm text-[var(--tw-text)] opacity-70 space-y-1">
                 <p>
                   <strong>Owner:</strong> Full control - can edit trip details,
                   manage collaborators, and delete the trip

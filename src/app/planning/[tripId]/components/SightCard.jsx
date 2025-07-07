@@ -67,9 +67,9 @@ export default function SightCard({
       <div
         ref={setNodeRef}
         style={style}
-        className={`flex items-start space-x-4 ${isDragging ? "z-50" : ""} ${
-          isReordering ? "pointer-events-none" : ""
-        }`}
+        className={`flex items-start space-x-2 sm:space-x-4 ${
+          isDragging ? "z-50" : ""
+        } ${isReordering ? "pointer-events-none" : ""}`}
       >
         <div className="flex flex-col items-center">
           <div className="w-3 h-3 bg-[var(--tw-focus)] rounded-full"></div>
@@ -78,48 +78,50 @@ export default function SightCard({
           )}
         </div>
 
-        <div className="flex-1 bg-[var(--tw-field)] rounded-lg p-4">
+        <div className="flex-1 bg-[var(--tw-field)] rounded-lg p-3 sm:p-4">
           <div>
             <div className="flex justify-between items-start mb-2">
-              <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
                 {canEdit && (
                   <div
                     {...attributes}
                     {...listeners}
-                    className="cursor-grab active:cursor-grabbing p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
+                    className="cursor-grab active:cursor-grabbing p-1 sm:p-1.5 hover:bg-[var(--tw-subbackground)] rounded transition-colors touch-manipulation"
                     title="Drag to reorder"
                   >
                     <GripVertical className="w-4 h-4 text-[var(--tw-text)] opacity-40" />
                   </div>
                 )}
-                <h4 className="font-semibold text-[var(--tw-text)] flex-1">
+                <h4 className="font-semibold text-[var(--tw-text)] flex-1 truncate pr-2">
                   {sight.name}
                 </h4>
               </div>
               {canEdit && (
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-shrink-0 ml-1">
                   <button
                     onClick={() => onEdit(sight)}
-                    className="cursor-pointer p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
+                    className="cursor-pointer p-1.5 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
                     disabled={isReordering}
+                    aria-label="Edit sight"
                   >
                     <Edit className="w-4 h-4 text-[var(--tw-text)] opacity-60" />
                   </button>
                   <button
                     onClick={handleDeleteClick}
-                    className="cursor-pointer p-1 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
+                    className="cursor-pointer p-1.5 hover:bg-[var(--tw-subbackground)] rounded transition-colors"
                     disabled={isReordering}
+                    aria-label="Delete sight"
                   >
                     <Trash2 className="w-4 h-4 text-red-500 opacity-60" />
                   </button>
                 </div>
               )}
             </div>
-            <p className="text-[var(--tw-text)] opacity-70 text-sm mb-1">
+            <p className="text-[var(--tw-text)] opacity-70 text-xs sm:text-sm mb-1 break-words">
               {sight.location}
             </p>
             {sight.notes && (
-              <p className="text-[var(--tw-text)] opacity-60 text-sm">
+              <p className="text-[var(--tw-text)] opacity-60 text-xs break-words">
                 {sight.notes}
               </p>
             )}
