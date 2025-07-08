@@ -13,6 +13,7 @@ export default function CitySetupCard({
   availableDays,
   onEditCity,
   onCityClick,
+  isMobile = false,
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -60,42 +61,49 @@ export default function CitySetupCard({
             : "border-[var(--tw-focus)]"
         }`}
       >
-        <div className="flex justify-between">
+        <div
+          className={`flex flex-col sm:flex-row sm:justify-between ${
+            isMobile ? "gap-3" : ""
+          }`}
+        >
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-[var(--tw-text)]">
                 {city.name}
               </h3>
             </div>
-            <div className="flex items-center gap-4 mt-2">
-              <div className="flex items-center gap-1 text-sm text-[var(--tw-text)] opacity-70">
-                <Clock className="w-4 h-4" />
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
+              <div className="flex items-center gap-1 text-xs sm:text-sm text-[var(--tw-text)] opacity-70">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>
                   {city.duration} day{city.duration !== 1 ? "s" : ""}
                 </span>
               </div>
               {city.notes && (
-                <div className="flex items-center gap-1 text-sm text-[var(--tw-text)] opacity-70">
-                  <StickyNote className="w-4 h-4" />
-                  <span className="truncate max-w-96">{city.notes}</span>
+                <div className="flex items-center gap-1 text-xs sm:text-sm text-[var(--tw-text)] opacity-70">
+                  <StickyNote className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="truncate max-w-[200px] sm:max-w-[300px]">
+                    {city.notes}
+                  </span>
                 </div>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className={`flex items-center gap-2 ${isMobile ? "mt-3" : ""}`}>
             <button
               onClick={() => onCityClick(city)}
-              className="cursor-pointer border border-[var(--tw-focus)] text-white px-6 py-1.5 rounded-lg transition-colors text-sm flex items-center gap-1"
+              className="cursor-pointer border border-[var(--tw-focus)] text-white px-4 sm:px-6 py-1.5 rounded-lg transition-colors text-xs sm:text-sm flex items-center gap-1 flex-1 sm:flex-auto justify-center"
               title="Plan day by day"
             >
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Plan
             </button>
 
             {canEditThisCity && canEdit && (
               <button
                 onClick={() => onEditCity(city)}
-                className="cursor-pointer text-[var(--tw-text)] opacity-70 hover:opacity-100 p-1"
+                className="cursor-pointer text-[var(--tw-text)] opacity-70 hover:opacity-100 p-2 rounded-lg hover:bg-[var(--tw-field)]"
                 title="Edit city"
               >
                 <Edit className="w-4 h-4" />
@@ -107,7 +115,9 @@ export default function CitySetupCard({
                 onClick={isSpecialCity ? () => {} : () => setShowConfirm(true)}
                 className={`cursor-${
                   isSpecialCity ? "not-allowed" : "pointer"
-                } p-1
+                } p-2 rounded-lg ${
+                  !isSpecialCity ? "hover:bg-[var(--tw-field)]" : ""
+                }
                   ${
                     isSpecialCity
                       ? "text-red-400 dark:text-gray-600"

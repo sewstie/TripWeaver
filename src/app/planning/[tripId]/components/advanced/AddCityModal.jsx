@@ -36,6 +36,7 @@ export default function AddCityModal({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState(null);
   const [scrollY, setScrollY] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   const locationInputRef = useRef(null);
   const suggestionsRef = useRef(null);
@@ -50,11 +51,38 @@ export default function AddCityModal({
   const maxDuration = availableDays + (editingCity?.duration || 0);
 
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
     const currentScrollY = window.scrollY;
     setScrollY(currentScrollY);
 
     const removeScrollLock = createScrollLock();
-    return removeScrollLock;
+
+    // Add meta viewport for better mobile input experience
+    const metaViewport = document.querySelector("meta[name=viewport]");
+    if (!metaViewport) {
+      const meta = document.createElement("meta");
+      meta.name = "viewport";
+      meta.content = "width=device-width, initial-scale=1, maximum-scale=1";
+      document.head.appendChild(meta);
+    } else {
+      metaViewport.content =
+        "width=device-width, initial-scale=1, maximum-scale=1";
+    }
+
+    return () => {
+      removeScrollLock();
+      window.removeEventListener("resize", checkMobile);
+
+      if (metaViewport) {
+        metaViewport.content = "width=device-width, initial-scale=1";
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -225,7 +253,7 @@ export default function AddCityModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       style={{
         height: "100vh",
         marginTop: `${scrollY}px`,
@@ -233,8 +261,8 @@ export default function AddCityModal({
     >
       <div className="fixed inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
       <div className="modal-content relative bg-[var(--tw-subbackground)] rounded-lg w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col z-10">
-        <div className="flex justify-between items-center p-6 border-b border-[var(--tw-border)]">
-          <h2 className="text-xl font-bold text-[var(--tw-text)]">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-[var(--tw-border)]">
+          <h2 className="text-lg sm:text-xl font-bold text-[var(--tw-text)]">
             {isEditing ? "Edit City" : "Add City to Visit"}
           </h2>
           <button
@@ -246,7 +274,7 @@ export default function AddCityModal({
         </div>
 
         <div
-          className="overflow-y-auto flex-1 p-6"
+          className="overflow-y-auto flex-1 p-4 sm:p-6"
           style={{ scrollbarColor: "var(--tw-border) transparent" }}
         >
           {error && (
@@ -255,9 +283,12 @@ export default function AddCityModal({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4 sm:gap-6"
+          >
             <div className="relative">
-              <label className="block mb-2 font-medium text-[var(--tw-text)]">
+              <label className="block mb-1.5 sm:mb-2 font-medium text-[var(--tw-text)] text-sm sm:text-base">
                 City Name *
               </label>
               <div className="relative">
@@ -267,7 +298,7 @@ export default function AddCityModal({
                   name="name"
                   value={formData.name}
                   onChange={canEditName ? handleLocationChange : handleChange}
-                  className={`w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors ${
+                  className={`w-full px-4 py-2.5 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors ${
                     !canEditName ? "opacity-60 cursor-not-allowed" : ""
                   }`}
                   placeholder={
@@ -295,14 +326,14 @@ export default function AddCityModal({
                 canEditName && (
                   <div
                     ref={suggestionsRef}
-                    className="absolute z-10 w-full mt-1 bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-10 w-full mt-1 bg-[var(--tw-subbackground)] border border-[var(--tw-border)] rounded-lg shadow-lg max-h-52 sm:max-h-60 overflow-y-auto"
                   >
                     {locationSuggestions.map((suggestion, index) => (
                       <button
                         key={index}
                         type="button"
                         onClick={() => handleSelectSuggestion(suggestion)}
-                        className="w-full text-left px-3 py-2 hover:bg-[var(--tw-field)] transition-colors border-b border-[var(--tw-border)] last:border-b-0"
+                        className="w-full text-left px-3 py-2.5 hover:bg-[var(--tw-field)] transition-colors border-b border-[var(--tw-border)] last:border-b-0"
                       >
                         <div className="flex items-start gap-2">
                           <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[var(--tw-focus)]" />
@@ -313,7 +344,7 @@ export default function AddCityModal({
                                 suggestion.components.village ||
                                 suggestion.formatted.split(",")[0]}
                             </div>
-                            <div className="text-sm text-[var(--tw-text)] opacity-70 truncate">
+                            <div className="text-xs sm:text-sm text-[var(--tw-text)] opacity-70 truncate">
                               {suggestion.formatted}
                             </div>
                           </div>
@@ -325,7 +356,7 @@ export default function AddCityModal({
             </div>
 
             <div>
-              <label className="block mb-2 font-medium text-[var(--tw-text)]">
+              <label className="block mb-1.5 sm:mb-2 font-medium text-[var(--tw-text)] text-sm sm:text-base">
                 Duration (days) *
               </label>
               <input
@@ -348,7 +379,7 @@ export default function AddCityModal({
                 pattern="[0-9]*"
                 min="1"
                 max={maxDuration}
-                className="w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full px-4 py-2.5 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 disabled={isSubmitting}
                 required
                 placeholder="Enter number of days"
@@ -359,7 +390,7 @@ export default function AddCityModal({
             </div>
 
             <div className="mb-0">
-              <label className="block mb-2 font-medium text-[var(--tw-text)]">
+              <label className="block mb-1.5 sm:mb-2 font-medium text-[var(--tw-text)] text-sm sm:text-base">
                 Notes (optional)
               </label>
               <textarea
@@ -367,8 +398,8 @@ export default function AddCityModal({
                 value={formData.notes}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-4 py-2 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors resize-none"
-                placeholder="Why do you want to visit this city? What are you hoping to see?"
+                className="w-full px-4 py-2.5 rounded-lg focus:outline-none bg-[var(--tw-field)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] placeholder-opacity-60 transition-colors resize-none"
+                placeholder="Why do you want to visit this city?"
                 disabled={isSubmitting}
                 autoComplete="off"
               />
@@ -376,30 +407,28 @@ export default function AddCityModal({
           </form>
         </div>
 
-        <div className="border-t border-[var(--tw-border)] p-6">
-          <div className="flex gap-3">
+        <div className="border-t border-[var(--tw-border)] p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer flex-1 px-4 py-2 border border-[var(--tw-border)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-field)] transition-colors"
+              className="cursor-pointer px-4 py-2.5 border border-[var(--tw-border)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-field)] transition-colors"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
-              className="cursor-pointer flex-1 bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2.5 rounded-lg hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               disabled={isSubmitting || maxDuration <= 0}
             >
               {isSubmitting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  {isEditing ? "Updating..." : "Adding..."}
+                  <span>{isEditing ? "Updating..." : "Adding..."}</span>
                 </>
-              ) : isEditing ? (
-                "Update City"
               ) : (
-                "Add City"
+                <span>{isEditing ? "Update City" : "Add City"}</span>
               )}
             </button>
           </div>
