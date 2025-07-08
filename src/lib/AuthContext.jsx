@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { auth, googleProvider, githubProvider } from "./firebase";
 import {
-  auth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -11,9 +11,9 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  googleProvider,
-  githubProvider,
-} from "./firebase";
+  setPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -28,6 +28,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
+  const redirectProcessed = useRef(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -47,35 +48,96 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const handleRedirectResult = async () => {
+    let authStateUnsubscribe = () => {};
+
+    const initAuth = async () => {
       try {
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-          if (result.user.displayName) {
-            localStorage.setItem(
-              `username_${result.user.uid}`,
-              result.user.displayName
-            );
-          }
+        await auth.authStateReady().catch(() => {});
 
-          const userDoc = await getDoc(doc(db, "users", result.user.uid));
-          if (!userDoc.exists()) {
-            await setDoc(doc(db, "users", result.user.uid), {
-              email: result.user.email.toLowerCase(),
-              name: result.user.displayName || "",
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
-          }
+        await setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-          router.push("/");
+        const pendingRedirect = localStorage.getItem("authRedirectPending");
+
+        if (pendingRedirect && !redirectProcessed.current) {
+          redirectProcessed.current = true;
+
+          try {
+            const result = await getRedirectResult(auth);
+
+            if (result?.user) {
+              localStorage.removeItem("authRedirectPending");
+              localStorage.removeItem("authRedirectTime");
+              router.push("/");
+              return;
+            }
+
+            if (auth.currentUser) {
+              localStorage.removeItem("authRedirectPending");
+              localStorage.removeItem("authRedirectTime");
+              router.push("/");
+              return;
+            }
+
+            const redirectTime = localStorage.getItem("authRedirectTime");
+            if (
+              redirectTime &&
+              Date.now() - parseInt(redirectTime) > 2 * 60 * 1000
+            ) {
+              localStorage.removeItem("authRedirectPending");
+              localStorage.removeItem("authRedirectTime");
+            }
+          } catch (error) {
+            localStorage.removeItem("authRedirectPending");
+            localStorage.removeItem("authRedirectTime");
+          }
         }
+
+        authStateUnsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            try {
+              const userDoc = await getDoc(doc(db, "users", user.uid));
+
+              if (!userDoc.exists()) {
+                await setDoc(doc(db, "users", user.uid), {
+                  email: user.email?.toLowerCase() || "",
+                  name: user.displayName || "",
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                });
+              }
+
+              setCurrentUser(user);
+
+              const pendingFlag = localStorage.getItem("authRedirectPending");
+              if (pendingFlag) {
+                localStorage.removeItem("authRedirectPending");
+                localStorage.removeItem("authRedirectTime");
+                router.push("/");
+              }
+            } catch (dbError) {
+              setCurrentUser(user);
+            }
+          } else {
+            setCurrentUser(null);
+          }
+
+          setLoading(false);
+        });
+
+        return authStateUnsubscribe;
       } catch (error) {
-        console.error("Redirect auth error:", error);
+        setLoading(false);
+        return () => {};
       }
     };
 
-    handleRedirectResult();
+    initAuth().then((unsubscribe) => {
+      authStateUnsubscribe = unsubscribe;
+    });
+
+    return () => {
+      authStateUnsubscribe();
+    };
   }, [router]);
 
   async function signup(email, password, username) {
@@ -104,6 +166,7 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -118,18 +181,24 @@ export function AuthProvider({ children }) {
   async function signInWithGoogle() {
     try {
       if (isMobile) {
-        return signInWithRedirect(auth, googleProvider);
+        await setPersistence(auth, browserLocalPersistence);
+        localStorage.setItem("authRedirectPending", "google");
+        localStorage.setItem("redirectStartTime", Date.now().toString());
+        redirectProcessed.current = false;
+        await signInWithRedirect(auth, googleProvider);
       } else {
-        const userCredential = await signInWithPopup(auth, googleProvider);
-        if (userCredential.user.displayName) {
+        const result = await signInWithPopup(auth, googleProvider);
+        if (result.user.displayName) {
           localStorage.setItem(
-            `username_${userCredential.user.uid}`,
-            userCredential.user.displayName
+            `username_${result.user.uid}`,
+            result.user.displayName
           );
         }
-        return userCredential.user;
+        return result;
       }
     } catch (error) {
+      localStorage.removeItem("authRedirectPending");
+      localStorage.removeItem("redirectStartTime");
       throw error;
     }
   }
@@ -137,18 +206,24 @@ export function AuthProvider({ children }) {
   async function signInWithGithub() {
     try {
       if (isMobile) {
-        return signInWithRedirect(auth, githubProvider);
+        await setPersistence(auth, browserLocalPersistence);
+        localStorage.setItem("authRedirectPending", "github");
+        localStorage.setItem("redirectStartTime", Date.now().toString());
+        redirectProcessed.current = false;
+        await signInWithRedirect(auth, githubProvider);
       } else {
-        const userCredential = await signInWithPopup(auth, githubProvider);
-        if (userCredential.user.displayName) {
+        const result = await signInWithPopup(auth, githubProvider);
+        if (result.user.displayName) {
           localStorage.setItem(
-            `username_${userCredential.user.uid}`,
-            userCredential.user.displayName
+            `username_${result.user.uid}`,
+            result.user.displayName
           );
         }
-        return userCredential.user;
+        return result;
       }
     } catch (error) {
+      localStorage.removeItem("authRedirectPending");
+      localStorage.removeItem("redirectStartTime");
       throw error;
     }
   }
@@ -157,29 +232,6 @@ export function AuthProvider({ children }) {
     await signOut(auth);
     router.push("/login");
   }
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (!userDoc.exists()) {
-          await setDoc(doc(db, "users", user.uid), {
-            email: user.email.toLowerCase(),
-            name: user.displayName || "",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-        }
-
-        setCurrentUser(user);
-      } else {
-        setCurrentUser(null);
-      }
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
 
   const value = {
     currentUser,

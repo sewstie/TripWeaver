@@ -63,7 +63,6 @@ export default function AddCityModal({
 
     const removeScrollLock = createScrollLock();
 
-    // Add meta viewport for better mobile input experience
     const metaViewport = document.querySelector("meta[name=viewport]");
     if (!metaViewport) {
       const meta = document.createElement("meta");

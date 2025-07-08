@@ -48,7 +48,6 @@ export default function AdvancedTripLayout({
   const [selectedMapDay, setSelectedMapDay] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if device is mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);

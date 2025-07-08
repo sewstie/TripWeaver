@@ -6,6 +6,13 @@ import { Loader2, Mail, Lock, User, Eye, EyeOff, Github } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { AlertCircle } from "lucide-react";
+import { auth, getRedirectResult, googleProvider } from "@/lib/firebase";
+import {
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  signInWithPopup,
+} from "firebase/auth";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -22,27 +29,85 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState("");
+  const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
   const { signup, signInWithGoogle, signInWithGithub, isMobile } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const metaViewport = document.querySelector("meta[name=viewport]");
-    if (!metaViewport) {
-      const meta = document.createElement("meta");
-      meta.name = "viewport";
-      meta.content = "width=device-width, initial-scale=1, maximum-scale=1";
-      document.head.appendChild(meta);
-    } else {
-      metaViewport.content =
-        "width=device-width, initial-scale=1, maximum-scale=1";
+    async function checkRedirectResult() {
+      try {
+        const pendingRedirect = localStorage.getItem("authRedirectPending");
+
+        if (pendingRedirect) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        const result = await getRedirectResult(auth);
+
+        if (result?.user) {
+          localStorage.removeItem("authRedirectPending");
+          router.push("/");
+          return;
+        }
+
+        if (pendingRedirect) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          const currentUser = auth.currentUser;
+
+          if (currentUser) {
+            localStorage.removeItem("authRedirectPending");
+            router.push("/");
+            return;
+          } else {
+            await auth.authStateReady();
+
+            const refreshedUser = auth.currentUser;
+            if (refreshedUser) {
+              localStorage.removeItem("authRedirectPending");
+              router.push("/");
+              return;
+            }
+
+            const startTime = parseInt(
+              localStorage.getItem("redirectStartTime") || "0"
+            );
+            if (startTime && Date.now() - startTime > 5 * 60 * 1000) {
+              localStorage.removeItem("authRedirectPending");
+              localStorage.removeItem("redirectStartTime");
+              setAuthError("Authentication timeout. Please try again.");
+            }
+          }
+        }
+      } catch (error) {
+        setAuthError(`Authentication error: ${error.message}`);
+        localStorage.removeItem("authRedirectPending");
+      } finally {
+        if (!localStorage.getItem("authRedirectPending")) {
+          setIsCheckingRedirect(false);
+        }
+      }
     }
 
-    return () => {
-      if (metaViewport) {
-        metaViewport.content = "width=device-width, initial-scale=1";
+    checkRedirectResult();
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const pendingRedirect = localStorage.getItem("authRedirectPending");
+        if (pendingRedirect) {
+          localStorage.removeItem("authRedirectPending");
+          localStorage.removeItem("redirectStartTime");
+          router.push("/");
+        }
       }
+    });
+
+    return () => {
+      unsubscribe();
+      localStorage.removeItem("authRedirectPending");
+      localStorage.removeItem("redirectStartTime");
     };
-  }, []);
+  }, [router]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -64,8 +129,6 @@ export default function Signup() {
 
     if (!formData.username.trim()) {
       newErrors.username = "Username is required";
-    } else if (formData.username.length < 3) {
-      newErrors.username = "Username must be at least 3 characters";
     }
 
     if (!formData.email) {
@@ -76,11 +139,13 @@ export default function Signup() {
 
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
@@ -95,24 +160,22 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+
     setIsLoading(true);
     setAuthError("");
+
     try {
-      const user = await signup(
-        formData.email,
-        formData.password,
-        formData.username
-      );
-      localStorage.setItem(`username_${user.uid}`, formData.username);
+      await signup(formData.email, formData.password, formData.username);
       router.push("/");
     } catch (error) {
-      console.error("Signup error:", error);
       if (error.code === "auth/email-already-in-use") {
-        setAuthError("This email is already registered.");
+        setAuthError("Email is already in use");
+      } else if (error.code === "auth/invalid-email") {
+        setAuthError("Email address is invalid");
       } else if (error.code === "auth/weak-password") {
-        setAuthError("Password is too weak.");
+        setAuthError("Password is too weak");
       } else {
-        setAuthError("An error occurred. Please try again.");
+        setAuthError("An unexpected error occurred. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -123,19 +186,26 @@ export default function Signup() {
     setIsGoogleLoading(true);
     setAuthError("");
     try {
-      await signInWithGoogle();
-      if (!isMobile) {
+      if (isMobile) {
+        try {
+          const result = await signInWithPopup(auth, googleProvider);
+          if (result) {
+            router.push("/");
+            return;
+          }
+        } catch (popupError) {
+          localStorage.setItem("authRedirectPending", "google");
+          localStorage.setItem("redirectStartTime", Date.now().toString());
+
+          await setPersistence(auth, browserLocalPersistence);
+          await signInWithGoogle();
+        }
+      } else {
+        await signInWithGoogle();
         router.push("/");
       }
     } catch (error) {
-      console.error("Google sign-in error:", error);
-      if (error.code === "auth/popup-closed-by-user") {
-        setAuthError("Sign-in was cancelled.");
-      } else if (error.code === "auth/popup-blocked") {
-        setAuthError("Popup was blocked. Please allow popup and try again.");
-      } else {
-        setAuthError("Failed to sign in with Google. Please try again.");
-      }
+      setAuthError(`Authentication error: ${error.message}`);
       setIsGoogleLoading(false);
     } finally {
       if (!isMobile) {
@@ -148,18 +218,28 @@ export default function Signup() {
     setIsGithubLoading(true);
     setAuthError("");
     try {
-      await signInWithGithub();
-      if (!isMobile) {
+      if (isMobile) {
+        localStorage.setItem("authRedirectPending", "github");
+        localStorage.setItem("redirectStartTime", Date.now().toString());
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithGithub();
+      } else {
+        await signInWithGithub();
         router.push("/");
       }
     } catch (error) {
-      console.error("GitHub sign-in error:", error);
       if (error.code === "auth/popup-closed-by-user") {
         setAuthError("Sign-in was cancelled.");
       } else if (error.code === "auth/popup-blocked") {
-        setAuthError("Popup was blocked. Please allow popup and try again.");
+        setAuthError("Popup was blocked. Please allow popups and try again.");
+      } else if (
+        error.code === "auth/account-exists-with-different-credential"
+      ) {
+        setAuthError(
+          "An account already exists with a different sign-in method."
+        );
       } else {
-        setAuthError("Failed to sign in with GitHub. Please try again");
+        setAuthError("Failed to sign in with GitHub. Please try again.");
       }
       setIsGithubLoading(false);
     } finally {
@@ -169,16 +249,57 @@ export default function Signup() {
     }
   };
 
+  useEffect(() => {
+    const metaViewport = document.querySelector("meta[name=viewport]");
+    if (!metaViewport) {
+      const meta = document.createElement("meta");
+      meta.name = "viewport";
+      meta.content = "width=device-width, initial-scale=1, maximum-scale=1";
+      document.head.appendChild(meta);
+    } else {
+      metaViewport.content =
+        "width=device-width, initial-scale=1, maximum-scale=1";
+    }
+
+    return () => {
+      if (metaViewport) {
+        metaViewport.content = "width=device-width, initial-scale=1";
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const pendingRedirect = localStorage.getItem("authRedirectPending");
+
+    if (!pendingRedirect) {
+      setIsCheckingRedirect(false);
+    }
+  }, []);
+
+  if (isCheckingRedirect) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-8 w-8 mx-auto mb-4 text-[var(--tw-focus)]" />
+          <p className="text-[var(--tw-text)] opacity-80">
+            Checking authentication...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className="py-8 sm:py-20 min-h-screen flex items-center justify-center bg-[var(--tw-background)]">
       <div className="container mx-auto px-4 sm:px-6">
         <div className="max-w-md mx-auto bg-[var(--tw-subbackground)] bg-opacity-20 backdrop-blur-sm rounded-xl p-6 sm:p-8 shadow-xl">
           <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-center text-[var(--tw-text)]">
-            Join <span className="text-[var(--tw-focus)]">TripWeaver</span>
+            Create Your Account
           </h1>
           <p className="text-[var(--tw-text)] opacity-80 text-center text-sm sm:text-base mb-5 sm:mb-6">
-            Create an account to start your journey
+            Join TripWeaver to plan your next adventure
           </p>
+
           {authError && (
             <div className="mb-5 sm:mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded flex items-start">
               <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
@@ -408,11 +529,11 @@ export default function Signup() {
               </span>
             </div>
           </div>
-          <div className="space-y-3 my-3">
+          <div className="space-y-3 mb-5">
             <button
               type="button"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading}
+              disabled={isGoogleLoading || isGithubLoading}
               className="cursor-pointer w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-white text-gray-700 border border-gray-300 flex items-center justify-center gap-2"
             >
               {isGoogleLoading ? (
@@ -437,22 +558,32 @@ export default function Signup() {
                   />
                 </svg>
               )}
-              <span className="text-sm sm:text-base">Continue with Google</span>
+              <span className="text-sm sm:text-base">
+                {isGoogleLoading && isMobile
+                  ? "Redirecting..."
+                  : "Sign up with Google"}
+              </span>
             </button>
+
             <button
               type="button"
               onClick={handleGithubSignIn}
-              disabled={isGithubLoading}
-              className="cursor-pointer w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-300 hover:opacity-90 bg-gray-900 text-white flex items-center justify-center gap-2"
+              disabled={isGithubLoading || isGoogleLoading}
+              className="cursor-pointer w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-300 hover:opacity-80 bg-gray-800 text-white flex items-center justify-center gap-2"
             >
               {isGithubLoading ? (
                 <Loader2 className="animate-spin h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
                 <Github className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
-              <span className="text-sm sm:text-base">Continue with GitHub</span>
+              <span className="text-sm sm:text-base">
+                {isGithubLoading && isMobile
+                  ? "Redirecting..."
+                  : "Sign up with GitHub"}
+              </span>
             </button>
           </div>
+
           <div className="mt-6 text-center">
             <p className="text-sm text-[var(--tw-text)]">
               Already have an account?{" "}
@@ -466,7 +597,6 @@ export default function Signup() {
           </div>
         </div>
       </div>
-
       <style jsx>{`
         .placeholder-custom::placeholder {
           color: var(--tw-text);

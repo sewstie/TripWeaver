@@ -10,6 +10,8 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  setPersistence,
+  browserLocalPersistence,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -54,6 +56,8 @@ export {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  setPersistence,
+  browserLocalPersistence,
   googleProvider,
   githubProvider,
   collection,
