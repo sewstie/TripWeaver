@@ -491,3 +491,11 @@ body {
     object-fit: contain;
   }
 }
+
+@media (max-width: 767px) {
+  .dashboard-card {
+    height: auto;
+    min-height: auto;
+    max-height: none;
+  }
+}

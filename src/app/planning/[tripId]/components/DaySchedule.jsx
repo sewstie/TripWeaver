@@ -146,17 +146,19 @@ export default function DaySchedule({
 
   return (
     <div className="bg-[var(--tw-subbackground)] rounded-lg p-6">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
         <div>
           <h3 className="text-xl font-bold text-[var(--tw-text)]">
             Day {dayNumber}
           </h3>
-          <p className="text-[var(--tw-text)] opacity-70">{formatDate(day)}</p>
+          <p className="text-[var(--tw-text)] opacity-70 mb-3 sm:mb-0">
+            {formatDate(day)}
+          </p>
         </div>
         {canEdit && (
           <button
             onClick={handleAddSight}
-            className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+            className="cursor-pointer bg-[var(--tw-focus)] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors self-start sm:self-center"
           >
             Add Sight
           </button>

@@ -71,22 +71,15 @@ export default function SightCard({
           isDragging ? "z-50" : ""
         } ${isReordering ? "pointer-events-none" : ""}`}
       >
-        <div className="flex flex-col items-center">
-          <div className="w-3 h-3 bg-[var(--tw-focus)] rounded-full"></div>
-          {!isLast && (
-            <div className="w-0.5 h-16 bg-[var(--tw-field)] mt-2"></div>
-          )}
-        </div>
-
-        <div className="flex-1 bg-[var(--tw-field)] rounded-lg p-3 sm:p-4">
-          <div>
+        <div className="flex-1 bg-[var(--tw-field)] rounded-lg p-3 sm:p-4 overflow-hidden">
+          <div className="w-full">
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
                 {canEdit && (
                   <div
                     {...attributes}
                     {...listeners}
-                    className="cursor-grab active:cursor-grabbing p-1 sm:p-1.5 hover:bg-[var(--tw-subbackground)] rounded transition-colors touch-manipulation"
+                    className="cursor-grab active:cursor-grabbing p-1 sm:p-1.5 hover:bg-[var(--tw-subbackground)] rounded transition-colors touch-manipulation flex-shrink-0"
                     title="Drag to reorder"
                   >
                     <GripVertical className="w-4 h-4 text-[var(--tw-text)] opacity-40" />
@@ -117,11 +110,11 @@ export default function SightCard({
                 </div>
               )}
             </div>
-            <p className="text-[var(--tw-text)] opacity-70 text-xs sm:text-sm mb-1 break-words">
+            <p className="text-[var(--tw-text)] opacity-70 text-xs sm:text-sm mb-1 break-words max-w-full">
               {sight.location}
             </p>
             {sight.notes && (
-              <p className="text-[var(--tw-text)] opacity-60 text-xs break-words">
+              <p className="text-[var(--tw-text)] opacity-60 text-xs break-words max-w-full">
                 {sight.notes}
               </p>
             )}

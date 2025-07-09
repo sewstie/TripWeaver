@@ -62,10 +62,60 @@ export default function TripHeader({ trip, onEdit, onManageAccess, onDelete }) {
     isOwner || trip?.collaborators?.[currentUser?.uid] === "editor";
 
   return (
-    <div className="bg-[var(--tw-subbackground)] rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 sm:mb-4">
-        <div className="flex-1 mb-3 sm:mb-0">
-          <h1 className="text-xl sm:text-3xl font-bold text-[var(--tw-text)] mb-1 sm:mb-2 pr-10 sm:pr-0">
+    <div className="bg-[var(--tw-subbackground)] rounded-lg p-4 sm:p-6 mb-4 sm:mb-6 relative">
+      {/* Menu Button - Absolutely positioned and centered vertically */}
+      <div
+        className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-10"
+        ref={menuRef}
+      >
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors"
+          aria-label="Trip menu"
+          aria-expanded={isMenuOpen}
+        >
+          <MoreVertical className="w-5 h-5 text-[var(--tw-text)]" />
+        </button>
+
+        {isMenuOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-[var(--tw-subbackground)] border border-[var(--tw-field)] rounded-lg shadow-lg z-10">
+            {canEdit && (
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onEdit();
+                }}
+                className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
+              >
+                Edit Trip Details
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setIsMenuOpen(false);
+                onManageAccess();
+              }}
+              className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
+            >
+              Manage Access
+            </button>
+            {isOwner && (
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onDelete();
+                }}
+                className="cursor-pointer w-full text-left px-4 py-3 text-red-500 hover:bg-[var(--tw-field)] transition-colors"
+              >
+                Delete Trip
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="pr-10">
+        <div className="mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-3xl font-bold text-[var(--tw-text)] mb-1 sm:mb-2">
             {trip?.title || trip?.name}
           </h1>
           <p className="text-base sm:text-lg text-[var(--tw-text)] opacity-70 mb-2 sm:mb-3">
@@ -78,59 +128,12 @@ export default function TripHeader({ trip, onEdit, onManageAccess, onDelete }) {
           </div>
         </div>
 
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="cursor-pointer p-2 hover:bg-[var(--tw-field)] rounded-lg transition-colors absolute top-[-60px] sm:static right-0"
-            aria-label="Trip menu"
-            aria-expanded={isMenuOpen}
-          >
-            <MoreVertical className="w-5 h-5 text-[var(--tw-text)]" />
-          </button>
-
-          {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-[var(--tw-subbackground)] border border-[var(--tw-field)] rounded-lg shadow-lg z-10">
-              {canEdit && (
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onEdit();
-                  }}
-                  className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
-                >
-                  Edit Trip Details
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onManageAccess();
-                }}
-                className="cursor-pointer w-full text-left px-4 py-3 text-[var(--tw-text)] hover:bg-[var(--tw-field)] transition-colors"
-              >
-                Manage Access
-              </button>
-              {isOwner && (
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onDelete();
-                  }}
-                  className="cursor-pointer w-full text-left px-4 py-3 text-red-500 hover:bg-[var(--tw-field)] transition-colors"
-                >
-                  Delete Trip
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        {trip?.description && (
+          <p className="text-[var(--tw-text)] opacity-80 text-sm">
+            {trip.description}
+          </p>
+        )}
       </div>
-
-      {trip?.description && (
-        <p className="text-[var(--tw-text)] opacity-80 text-sm">
-          {trip.description}
-        </p>
-      )}
     </div>
   );
 }

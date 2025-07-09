@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
-import { User, Menu, X } from "lucide-react";
+import { User, Menu, X, Home } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Header() {
@@ -12,19 +12,15 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Check if device is mobile on mount and window resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
-    // Check on initial load
     checkMobile();
 
-    // Add event listener
     window.addEventListener("resize", checkMobile);
 
-    // Prevent body scrolling when menu is open
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -68,18 +64,31 @@ export default function Header() {
     logout();
   };
 
+  const handleLogoClick = (e) => {
+    if (isMobile) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <header
       className="absolute top-0 left-0 right-0 z-50 py-4"
       style={{ backgroundColor: "transparent" }}
     >
       <div className="container mx-auto px-4 sm:px-6 flex justify-between items-center">
-        <Link
-          href="/"
-          className="text-xl sm:text-2xl font-bold z-10 text-[var(--tw-text)]"
-        >
-          TripWeaver
-        </Link>
+        {isMobile ? (
+          <span className="text-xl sm:text-2xl font-bold z-10 text-[var(--tw-text)]">
+            TripWeaver
+          </span>
+        ) : (
+          <Link
+            href="/"
+            className="text-xl sm:text-2xl font-bold z-10 text-[var(--tw-text)]"
+            onClick={handleLogoClick}
+          >
+            TripWeaver
+          </Link>
+        )}
 
         <div className="hidden md:flex items-center gap-2">
           {currentUser ? (
@@ -132,7 +141,6 @@ export default function Header() {
           )}
         </button>
 
-        {/* Full screen mobile menu */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 bg-[var(--tw-background)] z-40 md:hidden flex flex-col">
             <div className="flex justify-between items-center p-4 border-b border-[var(--tw-border)] border-opacity-20">
@@ -161,33 +169,39 @@ export default function Header() {
                     </div>
                   </div>
 
-                  <nav className="space-y-1 mb-8">
-                    <Link
-                      href="/account"
-                      className="block py-3 px-4 text-[var(--tw-text)] font-medium rounded-lg hover:bg-[var(--tw-subbackground)]"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      My Account
-                    </Link>
+                  <div className="grid grid-cols-2 gap-4 mb-8">
                     <Link
                       href="/"
-                      className="block py-3 px-4 text-[var(--tw-text)] font-medium rounded-lg hover:bg-[var(--tw-subbackground)]"
+                      className="flex flex-col items-center gap-3 py-5 px-4 text-[var(--tw-text)] font-medium rounded-xl bg-[var(--tw-subbackground)] hover:bg-opacity-80 transition shadow-sm"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Home
+                      <div className="p-3 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-md">
+                        <Home
+                          className="h-6 w-6 text-white"
+                          strokeWidth={2.5}
+                        />
+                      </div>
+                      <span>Home</span>
                     </Link>
+
                     <Link
-                      href="/trips"
-                      className="block py-3 px-4 text-[var(--tw-text)] font-medium rounded-lg hover:bg-[var(--tw-subbackground)]"
+                      href="/account"
+                      className="flex flex-col items-center gap-3 py-5 px-4 text-[var(--tw-text)] font-medium rounded-xl bg-[var(--tw-subbackground)] hover:bg-opacity-80 transition shadow-sm"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      My Trips
+                      <div className="p-3 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-md">
+                        <User
+                          className="h-6 w-6 text-white"
+                          strokeWidth={2.5}
+                        />
+                      </div>
+                      <span>My Account</span>
                     </Link>
-                  </nav>
+                  </div>
 
                   <div className="mt-auto">
                     <button
-                      className="w-full py-3 px-4 rounded-lg bg-[var(--tw-focus)] text-white font-medium"
+                      className="w-full py-3.5 px-4 rounded-xl bg-[var(--tw-focus)] text-white font-medium"
                       onClick={handleLogout}
                     >
                       Logout

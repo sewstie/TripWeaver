@@ -388,15 +388,9 @@ export default function AdvancedTripLayout({
           Your Journey Route
         </h3>
 
-        {/* Mobile Route Display */}
         <div className="md:hidden flex flex-col space-y-2">
           {cities.map((city, index) => (
             <div key={city.id} className="flex items-center gap-2">
-              <div className="flex items-center">
-                {index > 0 && (
-                  <div className="h-6 w-0.5 bg-[var(--tw-border)] ml-[11px] -my-1"></div>
-                )}
-              </div>
               <div
                 className={`px-3 py-2 rounded-lg text-sm font-medium flex-grow ${
                   city.isArrivalCity || city.isRoundTripArrival
@@ -408,6 +402,12 @@ export default function AdvancedTripLayout({
               >
                 {(city.isArrivalCity || city.isRoundTripArrival) && "🛬 "}
                 {(city.isDepartureCity || city.isRoundTripDeparture) && "🛫 "}
+                {!(
+                  city.isArrivalCity ||
+                  city.isRoundTripArrival ||
+                  city.isDepartureCity ||
+                  city.isRoundTripDeparture
+                ) && "🏙️ "}
                 {city.name}
                 {city.duration > 0 && ` (${city.duration}d)`}
               </div>
@@ -415,7 +415,6 @@ export default function AdvancedTripLayout({
           ))}
         </div>
 
-        {/* Desktop Route Display */}
         <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-4">
           {cities.map((city, index) => (
             <div
@@ -436,6 +435,12 @@ export default function AdvancedTripLayout({
               >
                 {(city.isArrivalCity || city.isRoundTripArrival) && "🛬 "}
                 {(city.isDepartureCity || city.isRoundTripDeparture) && "🛫 "}
+                {!(
+                  city.isArrivalCity ||
+                  city.isRoundTripArrival ||
+                  city.isDepartureCity ||
+                  city.isRoundTripDeparture
+                ) && "🏙️ "}
                 {city.name}
                 {city.duration > 0 && ` (${city.duration}d)`}
               </div>
@@ -452,7 +457,7 @@ export default function AdvancedTripLayout({
           {canEdit && (
             <button
               onClick={() => setIsAddCityModalOpen(true)}
-              className="cursor-pointer bg-[var(--tw-focus)] text-white px-5 sm:px-8 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start"
+              className="cursor-pointer bg-[var(--tw-focus)] text-white px-5 sm:px-8 py-2 rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />
               Add City
