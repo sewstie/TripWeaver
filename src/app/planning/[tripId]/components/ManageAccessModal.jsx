@@ -407,7 +407,7 @@ export default function ManageAccessModal({ trip, onClose }) {
                       key={collaborator.uid}
                       className={`flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg p-3 bg-[var(--tw-field)]`}
                     >
-                      <div className="flex items-center gap-3 mb-3 sm:mb-0">
+                      <div className="flex items-center gap-3 mb-0.5 sm:mb-3">
                         <div className="flex items-center gap-2">
                           {getRoleIcon(collaborator.role)}
                           <div>
@@ -424,53 +424,53 @@ export default function ManageAccessModal({ trip, onClose }) {
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 justify-end">
-                        {isOwner &&
-                        collaborator.uid !== currentUser?.uid &&
-                        collaborator.role !== "owner" ? (
-                          <>
-                            <div className="relative">
-                              <select
-                                value={collaborator.role}
-                                onChange={(e) =>
-                                  handleRoleChange(
+                        <div className="flex items-center gap-2 justify-end">
+                          {isOwner &&
+                          collaborator.uid !== currentUser?.uid &&
+                          collaborator.role !== "owner" ? (
+                            <>
+                              <div className="relative">
+                                <select
+                                  value={collaborator.role}
+                                  onChange={(e) =>
+                                    handleRoleChange(
+                                      collaborator.uid,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="px-2 py-1 text-sm appearance-none pr-6 rounded-lg focus:outline-none bg-[var(--tw-subbackground)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
+                                >
+                                  <option value="editor">Editor</option>
+                                  <option value="viewer">Viewer</option>
+                                </select>
+                                <ChevronDown className="absolute right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 text-[var(--tw-text)] opacity-60 pointer-events-none" />
+                              </div>
+                              <button
+                                onClick={() =>
+                                  handleRemoveCollaborator(
                                     collaborator.uid,
-                                    e.target.value
+                                    collaborator.displayName
                                   )
                                 }
-                                className="px-2 py-1 text-sm appearance-none pr-6 rounded-lg focus:outline-none bg-[var(--tw-subbackground)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
+                                className="cursor-pointer p-1.5"
+                                title="Remove access"
                               >
-                                <option value="editor">Editor</option>
-                                <option value="viewer">Viewer</option>
-                              </select>
-                              <ChevronDown className="absolute right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 text-[var(--tw-text)] opacity-60 pointer-events-none" />
-                            </div>
-                            <button
-                              onClick={() =>
-                                handleRemoveCollaborator(
-                                  collaborator.uid,
-                                  collaborator.displayName
-                                )
-                              }
-                              className="cursor-pointer p-1.5"
-                              title="Remove access"
+                                <Trash2 className="w-4 h-4 text-red-500 hover:text-red-400 transition-all duration-75" />
+                              </button>
+                            </>
+                          ) : (
+                            <span
+                              className={`px-2 py-1 text-sm rounded  ${
+                                collaborator.role === "owner"
+                                  ? "bg-yellow-200 text-yellow-800 font-semibold text-center w-20 sm:w-28"
+                                  : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] w-20 sm:w-28"
+                              }`}
                             >
-                              <Trash2 className="w-4 h-4 text-red-500 hover:text-red-400 transition-all duration-75" />
-                            </button>
-                          </>
-                        ) : (
-                          <span
-                            className={`px-2 py-1 text-sm rounded  ${
-                              collaborator.role === "owner"
-                                ? "bg-yellow-200 text-yellow-800 font-semibold text-center w-20 sm:w-28"
-                                : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] w-20 sm:w-28"
-                            }`}
-                          >
-                            {getRoleDisplayName(collaborator.role)}
-                          </span>
-                        )}
+                              {getRoleDisplayName(collaborator.role)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

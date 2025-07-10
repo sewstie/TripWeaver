@@ -281,7 +281,6 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
                       setEndDateOpen(false);
                     }}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.startDate ? (
                       format(formData.startDate, "PPP")
                     ) : (
@@ -325,7 +324,6 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
                       setStartDateOpen(false);
                     }}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.endDate ? (
                       format(formData.endDate, "PPP")
                     ) : (
