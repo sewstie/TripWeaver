@@ -1,17 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { updateProfile } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { User, Mail, Calendar, Shield, Edit2, Save, X } from "lucide-react";
+import { doc, updateDoc } from "firebase/firestore";
 
 export default function ProfileCard() {
-  const { currentUser, getUserName, logout } = useAuth();
+  const { currentUser, getUserName, logout, refreshUserData } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
-  const [isLoading, setIsloading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const getDisplayName = () => {
     const username = getUserName(currentUser?.uid);
@@ -19,6 +18,12 @@ export default function ProfileCard() {
     if (currentUser?.displayName) return currentUser.displayName;
     return currentUser?.email?.split("@")[0] || "User";
   };
+
+  useEffect(() => {
+    if (!isEditing && currentUser) {
+      setDisplayName(getDisplayName());
+    }
+  }, [currentUser, isEditing]);
 
   const getProviderName = () => {
     if (!currentUser?.providerData?.length) return "Email/Password";
@@ -39,34 +44,52 @@ export default function ProfileCard() {
   const handleEditStart = () => {
     setDisplayName(getDisplayName());
     setIsEditing(true);
-    setError("");
-    setSuccess("");
   };
 
   const handleEditCancel = () => {
     setIsEditing(false);
     setDisplayName("");
-    setError("");
-    setSuccess("");
   };
 
   const handleSave = async () => {
     if (!displayName.trim()) {
-      setError("Display name cannot be empty");
       return;
     }
+
     setIsLoading(true);
-    setError("");
     try {
       await updateProfile(auth.currentUser, {
         displayName: displayName.trim(),
       });
+
+      if (currentUser?.uid) {
+        try {
+          await updateDoc(doc(db, "users", currentUser.uid), {
+            displayName: displayName.trim(),
+            updatedAt: new Date(),
+          });
+        } catch (firestoreError) {
+          console.error(
+            "Error updating Firestore user document:",
+            firestoreError
+          );
+        }
+      }
       localStorage.setItem(`username_${currentUser.uid}`, displayName.trim());
-      setSuccess("Profile updated successfully!");
+
+      if (typeof refreshUserData === "function") {
+        await refreshUserData();
+      } else {
+        await auth.currentUser.reload();
+
+        const event = new CustomEvent("userDisplayNameChanged", {
+          detail: { uid: currentUser.uid, name: displayName.trim() },
+        });
+        window.dispatchEvent(event);
+      }
+
       setIsEditing(false);
-      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
-      setError("Failed to update profile. Please try again.");
       console.error("Profile update error:", error);
     } finally {
       setIsLoading(false);
@@ -74,7 +97,7 @@ export default function ProfileCard() {
   };
 
   const formatDate = (timestamp) => {
-    if (!timestamp) return "Unkown";
+    if (!timestamp) return "Unknown";
     return new Date(timestamp).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -100,7 +123,7 @@ export default function ProfileCard() {
                   Edit
                 </button>
               ) : (
-                <>
+                <div className="flex gap-2">
                   <button
                     onClick={handleSave}
                     disabled={isLoading}
@@ -115,28 +138,18 @@ export default function ProfileCard() {
                   </button>
                   <button
                     onClick={handleEditCancel}
-                    className="cursor-pointer flex items-center justify-center w-8 h-8 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+                    className="cursor-pointer flex items-center gap-2 px-4 sm:px-5 py-1.5 text-sm border border-[var(--tw-border)] text-[var(--tw-text)] rounded-lg hover:bg-[var(--tw-field)] transition-colors"
                   >
                     <X className="h-4 w-4" />
+                    Cancel
                   </button>
-                </>
+                </div>
               )}
             </div>
           </div>
         </div>
       </div>
       <div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-500 bg-opacity-10 border border-red-500 rounded-lg text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 p-3 bg-green-500 bg-opacity-10 border border-green-500 rounded-lg text-green-400 text-sm">
-            {success}
-          </div>
-        )}
-
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-[var(--tw-border)]">
             <div className="flex items-center gap-3 mb-2 sm:mb-0">
@@ -151,7 +164,8 @@ export default function ProfileCard() {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-3 py-1 bg-[var(--tw-field)] border border-[var(--tw-border)] rounded text-[var(--tw-text)] text-sm focus:outline-none focus:border-[var(--tw-focus)]"
+                  className="w-full px-3 py-1.5 bg-[var(--tw-field)] border border-[var(--tw-border)] rounded text-[var(--tw-text)] text-sm focus:outline-none focus:border-[var(--tw-focus)]"
+                  autoFocus
                 />
               ) : (
                 <span className="text-[var(--tw-text)] font-medium break-words">
@@ -201,7 +215,7 @@ export default function ProfileCard() {
       <div className="mt-6">
         <button
           onClick={logout}
-          className="cursor-pointer text-[var(--tw-text)] w-full px-4 py-2 border border-[var(--tw-focus)] rounded-lg"
+          className="cursor-pointer text-[var(--tw-text)] w-full px-4 py-2 border border-[var(--tw-focus)] rounded-lg hover:bg-[var(--tw-field)] transition-colors"
         >
           Logout
         </button>

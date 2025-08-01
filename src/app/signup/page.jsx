@@ -519,7 +519,7 @@ export default function Signup() {
               )}
             </button>
           </form>
-          <div className="relative my-5">
+          <div className="relative mb-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[var(--tw-border)]"></div>
             </div>

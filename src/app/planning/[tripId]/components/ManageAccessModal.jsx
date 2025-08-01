@@ -24,7 +24,7 @@ import {
 import Confirmation from "@/app/components/Confirmation";
 import { createScrollLock } from "@/lib/utils/modalUtils";
 
-export default function ManageAccessModal({ trip, onClose }) {
+export default function ManageAccessModal({ trip, onClose, onTripUpdate }) {
   const { currentUser, getUserName } = useAuth();
   const [email, setEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState("editor");
@@ -176,6 +176,18 @@ export default function ManageAccessModal({ trip, onClose }) {
         updatedAt: new Date(),
       });
 
+      if (onTripUpdate) {
+        const updatedTrip = {
+          ...trip,
+          collaborators: {
+            ...trip.collaborators,
+            [userId]: selectedRole,
+          },
+          updatedAt: new Date(),
+        };
+        onTripUpdate(updatedTrip);
+      }
+
       setEmail("");
       setMessage(`Invitation sent to ${getDisplayName(userData, userId)}!`);
       setMessageType("success");
@@ -260,6 +272,18 @@ export default function ManageAccessModal({ trip, onClose }) {
         updatedAt: new Date(),
       });
 
+      if (onTripUpdate) {
+        const updatedTrip = {
+          ...trip,
+          collaborators: {
+            ...trip.collaborators,
+            [userId]: deleteField(),
+          },
+          updatedAt: new Date(),
+        };
+        onTripUpdate(updatedTrip);
+      }
+
       setCollaboratorDetails((prev) =>
         prev.filter((collab) => collab.uid !== userId)
       );
@@ -335,7 +359,7 @@ export default function ManageAccessModal({ trip, onClose }) {
             style={{ scrollbarColor: "var(--tw-border) transparent" }}
           >
             {isOwner && (
-              <form onSubmit={handleInvite} className="mb-6">
+              <form onSubmit={handleInvite} className="mb-4">
                 <div className="flex flex-col sm:flex-row items-start gap-3">
                   <div className="flex-1 w-full">
                     <input
@@ -372,22 +396,17 @@ export default function ManageAccessModal({ trip, onClose }) {
                     {isSubmitting ? "Inviting..." : "Invite"}
                   </button>
                 </div>
-              </form>
-            )}
 
-            {message && (
-              <div
-                className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${
-                  messageType === "success"
-                    ? "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
-                    : "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
-                }`}
-              >
-                {messageType === "success" && (
-                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                )}
-                <span className="text-sm">{message}</span>
-              </div>
+                <div className="min-h-[20px] text-sm transition-opacity duration-300 mt-2">
+                  {message && messageType === "success" ? (
+                    <p className="text-green-500 font-medium">{message}</p>
+                  ) : message && messageType === "error" ? (
+                    <p className="text-red-500 font-medium">{message}</p>
+                  ) : (
+                    <p className="opacity-0">Status message placeholder</p>
+                  )}
+                </div>
+              </form>
             )}
 
             <div>
@@ -401,13 +420,13 @@ export default function ManageAccessModal({ trip, onClose }) {
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--tw-focus)]"></div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {collaboratorDetails.map((collaborator) => (
                     <div
                       key={collaborator.uid}
-                      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg p-3 bg-[var(--tw-field)]`}
+                      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg p-2 bg-[var(--tw-field)]`}
                     >
-                      <div className="flex items-center gap-3 mb-0.5 sm:mb-3">
+                      <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
                           {getRoleIcon(collaborator.role)}
                           <div>
@@ -424,53 +443,53 @@ export default function ManageAccessModal({ trip, onClose }) {
                             </div>
                           </div>
                         </div>
+                      </div>
 
-                        <div className="flex items-center gap-2 justify-end">
-                          {isOwner &&
-                          collaborator.uid !== currentUser?.uid &&
-                          collaborator.role !== "owner" ? (
-                            <>
-                              <div className="relative">
-                                <select
-                                  value={collaborator.role}
-                                  onChange={(e) =>
-                                    handleRoleChange(
-                                      collaborator.uid,
-                                      e.target.value
-                                    )
-                                  }
-                                  className="px-2 py-1 text-sm appearance-none pr-6 rounded-lg focus:outline-none bg-[var(--tw-subbackground)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
-                                >
-                                  <option value="editor">Editor</option>
-                                  <option value="viewer">Viewer</option>
-                                </select>
-                                <ChevronDown className="absolute right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 text-[var(--tw-text)] opacity-60 pointer-events-none" />
-                              </div>
-                              <button
-                                onClick={() =>
-                                  handleRemoveCollaborator(
+                      <div className="flex items-center justify-between w-full sm:w-auto sm:justify-end mt-2 sm:mt-0">
+                        {isOwner &&
+                        collaborator.uid !== currentUser?.uid &&
+                        collaborator.role !== "owner" ? (
+                          <>
+                            <div className="relative">
+                              <select
+                                value={collaborator.role}
+                                onChange={(e) =>
+                                  handleRoleChange(
                                     collaborator.uid,
-                                    collaborator.displayName
+                                    e.target.value
                                   )
                                 }
-                                className="cursor-pointer p-1.5"
-                                title="Remove access"
+                                className="px-2 py-1 text-sm appearance-none pr-6 rounded-lg focus:outline-none bg-[var(--tw-subbackground)] border text-[var(--tw-text)] border-[var(--tw-border)] focus:border-[var(--tw-text)] transition-colors"
                               >
-                                <Trash2 className="w-4 h-4 text-red-500 hover:text-red-400 transition-all duration-75" />
-                              </button>
-                            </>
-                          ) : (
-                            <span
-                              className={`px-2 py-1 text-sm rounded  ${
-                                collaborator.role === "owner"
-                                  ? "bg-yellow-200 text-yellow-800 font-semibold text-center w-20 sm:w-28"
-                                  : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] w-20 sm:w-28"
-                              }`}
+                                <option value="editor">Editor</option>
+                                <option value="viewer">Viewer</option>
+                              </select>
+                              <ChevronDown className="absolute right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 text-[var(--tw-text)] opacity-60 pointer-events-none" />
+                            </div>
+                            <button
+                              onClick={() =>
+                                handleRemoveCollaborator(
+                                  collaborator.uid,
+                                  collaborator.displayName
+                                )
+                              }
+                              className="cursor-pointer p-1.5"
+                              title="Remove access"
                             >
-                              {getRoleDisplayName(collaborator.role)}
-                            </span>
-                          )}
-                        </div>
+                              <Trash2 className="w-4 h-4 text-red-500 hover:text-red-400 transition-all duration-75" />
+                            </button>
+                          </>
+                        ) : (
+                          <span
+                            className={`px-2 py-1 text-sm rounded  ${
+                              collaborator.role === "owner"
+                                ? "bg-yellow-200 text-yellow-800 font-semibold text-center w-20 sm:w-28"
+                                : "bg-[var(--tw-subbackground)] text-[var(--tw-text)] w-20 sm:w-28"
+                            }`}
+                          >
+                            {getRoleDisplayName(collaborator.role)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}

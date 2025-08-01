@@ -321,7 +321,7 @@ export default function AddSightModal({
         </div>
 
         <div
-          className="overflow-y-auto flex-1 p-6"
+          className="flex-1 p-6"
           style={{ scrollbarColor: "var(--tw-border) transparent" }}
         >
           {error && (
@@ -375,7 +375,8 @@ export default function AddSightModal({
               {showSuggestions && locationSuggestions.length > 0 && (
                 <div
                   ref={suggestionsRef}
-                  className="absolute z-10 w-full mt-1 bg-[var(--tw-background)] border border-[var(--tw-border)] rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  className="absolute z-50 w-full mt-1 bg-[var(--tw-background)] border border-[var(--tw-border)] rounded-lg shadow-lg overflow-y-auto"
+                  style={{ maxHeight: "200px" }}
                 >
                   {locationSuggestions.map((suggestion, index) => {
                     const display = formatSuggestionDisplay(suggestion);

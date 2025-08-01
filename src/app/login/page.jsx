@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Loader2, Mail, Lock, Eye, EyeOff, Github } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { AlertCircle } from "lucide-react";
 import { auth, getRedirectResult, googleProvider } from "@/lib/firebase";
 import {
   onAuthStateChanged,
@@ -279,12 +278,7 @@ export default function Login() {
           <p className="text-[var(--tw-text)] opacity-80 text-center text-sm sm:text-base mb-5 sm:mb-6">
             Sign in to access your travel plans
           </p>
-          {authError && (
-            <div className="mb-5 sm:mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded flex items-start">
-              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-              <span className="text-sm">{authError}</span>
-            </div>
-          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
@@ -378,7 +372,7 @@ export default function Login() {
               </div>
               <div>
                 <Link
-                  href="#"
+                  href="reset"
                   className="font-medium text-[var(--tw-focus)] hover:opacity-80"
                 >
                   Forgot password?
@@ -399,8 +393,17 @@ export default function Login() {
                 "Sign in"
               )}
             </button>
+
+            <div className="min-h-[20px] text-center text-sm transition-opacity duration-300">
+              {authError ? (
+                <p className="text-red-500 font-medium">{authError}</p>
+              ) : (
+                <p className="opacity-0">Status message placeholder</p>
+              )}
+            </div>
           </form>
-          <div className="relative my-5">
+
+          <div className="relative mb-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[var(--tw-border)]"></div>
             </div>

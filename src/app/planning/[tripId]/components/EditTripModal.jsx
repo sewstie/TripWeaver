@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { X, Calendar as CalendarIcon, CheckCircle } from "lucide-react";
+import { X, Calendar as CalendarIcon } from "lucide-react";
 import { createScrollLock } from "@/lib/utils/modalUtils";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -169,7 +169,7 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
       }, 1500);
     } catch (error) {
       console.error("Error updating trip:", error);
-      setMessage("Failed to update trip. Please try again.");
+      setMessage("Failed to update. Try again.");
       setMessageType("error");
     } finally {
       setIsSubmitting(false);
@@ -217,21 +217,6 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
           className="overflow-y-auto flex-1 p-4 sm:p-6"
           style={{ scrollbarColor: "var(--tw-border) transparent" }}
         >
-          {message && (
-            <div
-              className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${
-                messageType === "success"
-                  ? "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
-                  : "bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
-              }`}
-            >
-              {messageType === "success" && (
-                <CheckCircle className="w-4 h-4 flex-shrink-0" />
-              )}
-              <span className="text-sm">{message}</span>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
               <label className="block mb-1.5 sm:mb-2 font-medium text-[var(--tw-text)]">
@@ -358,11 +343,9 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
             </div>
 
             {!isValidDateRange() && formData.startDate && formData.endDate && (
-              <div className="p-3 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-700 dark:text-red-300 text-sm">
-                  End date must be after or equal to start date
-                </p>
-              </div>
+              <p className="text-red-500 font-medium text-sm text-center">
+                End date must be after or equal to start date
+              </p>
             )}
           </form>
         </div>
@@ -390,6 +373,16 @@ export default function EditTripModal({ trip, onClose, onUpdate }) {
                 "Update Trip"
               )}
             </button>
+          </div>
+
+          <div className="mt-1 min-h-[20px] text-center text-sm transition-opacity duration-300">
+            {message && messageType === "success" ? (
+              <p className="text-green-500 font-medium">{message}</p>
+            ) : message && messageType === "error" ? (
+              <p className="text-red-500 font-medium">{message}</p>
+            ) : (
+              <p className="opacity-0">Status message placeholder</p>
+            )}
           </div>
         </div>
       </div>
